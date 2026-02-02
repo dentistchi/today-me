@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 나 - 과학적 자존감 진단</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 랜딩 페이지 -->
+    <div id="landing-page" class="page active">
+        <div class="landing-container">
+            <div class="landing-hero">
+                <div class="logo-container">
+                    <div class="logo-icon">✨</div>
+                    <h1 class="main-title">오늘의 나</h1>
+                    <p class="main-subtitle">Today's Me</p>
+                </div>
+                
+                <h2 class="hero-title">과학적으로 검증된<br>자존감 심층 분석</h2>
+                <p class="hero-description">
+                    50개의 전문 질문으로 당신의 진짜 자아를 발견하세요.<br>
+                    단순한 점수가 아닌, <strong>당신만의 성장 로드맵</strong>을 제공합니다.
+                </p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🔬</div>
+                        <h3>과학적 근거</h3>
+                        <p>Rosenberg 자존감 척도 기반<br>5개 차원 종합 분석</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>통계 기반 해석</h3>
+                        <p>167명 한국인 연구 데이터<br>(r=-0.640, p<0.001)</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💎</div>
+                        <h3>개인화 피드백</h3>
+                        <p>당신만의 숨겨진 강점<br>맞춤 성장 전략 제공</p>
+                    </div>
+                </div>
+                
+                <div class="cta-section">
+                    <button class="btn-start" onclick="startTest()">
+                        <span>무료로 시작하기</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                    <p class="time-info">⏱️ 소요시간: 약 10-12분</p>
+                </div>
+                
+                <div class="trust-badges">
+                    <div class="badge">✓ 완전 무료</div>
+                    <div class="badge">✓ 개인정보 보호</div>
+                    <div class="badge">✓ 과학적 검증</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 질문 페이지 -->
+    <div id="question-page" class="page">
+        <div class="question-container">
+            <!-- 헤더 -->
+            <div class="question-header">
+                <div class="progress-section">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span class="progress-text" id="progress-text">1 / 50</span>
+                        <span class="section-text" id="section-text">Part 1: 핵심 자존감</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 질문 영역 -->
+            <div class="question-content">
+                <div class="question-number" id="question-number">Q1</div>
+                <h2 class="question-title" id="question-title"></h2>
+                <p class="question-hint">최근 한 달을 기준으로 솔직하게 답변해주세요</p>
+                
+                <div class="answers-container">
+                    <button class="answer-option" data-value="1" onclick="selectAnswer(1)">
+                        <div class="answer-radio"></div>
+                        <div class="answer-content">
+                            <div class="answer-label">전혀 그렇지 않다</div>
+                            <div class="answer-number">1</div>
+                        </div>
+                    </button>
+                    
+                    <button class="answer-option" data-value="2" onclick="selectAnswer(2)">
+                        <div class="answer-radio"></div>
+                        <div class="answer-content">
+                            <div class="answer-label">그렇지 않다</div>
+                            <div class="answer-number">2</div>
+                        </div>
+                    </button>
+                    
+                    <button class="answer-option" data-value="3" onclick="selectAnswer(3)">
+                        <div class="answer-radio"></div>
+                        <div class="answer-content">
+                            <div class="answer-label">그렇다</div>
+                            <div class="answer-number">3</div>
+                        </div>
+                    </button>
+                    
+                    <button class="answer-option" data-value="4" onclick="selectAnswer(4)">
+                        <div class="answer-radio"></div>
+                        <div class="answer-content">
+                            <div class="answer-label">매우 그렇다</div>
+                            <div class="answer-number">4</div>
+                        </div>
+                    </button>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button class="btn-back" id="btn-back" onclick="previousQuestion()">
+                        ← 이전
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 간단한 결과 페이지 -->
+    <div id="preview-result-page" class="page">
+        <div class="result-container">
+            <div class="result-hero">
+                <div class="result-icon">🎯</div>
+                <h1 class="result-title">분석이 완료되었습니다!</h1>
+                <p class="result-subtitle">당신의 자존감 프로필을 확인하세요</p>
+            </div>
+            
+            <div class="preview-scores">
+                <div class="score-main">
+                    <div class="score-circle-container">
+                        <svg class="score-circle" width="200" height="200">
+                            <circle cx="100" cy="100" r="90" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+                            <circle id="score-circle-preview" cx="100" cy="100" r="90" fill="none" 
+                                    stroke="url(#gradient)" stroke-width="10" 
+                                    stroke-dasharray="565" stroke-dashoffset="565"
+                                    transform="rotate(-90 100 100)"/>
+                            <defs>
+                                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#667eea"/>
+                                    <stop offset="100%" style="stop-color:#764ba2"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="score-text">
+                            <div class="score-number" id="preview-total-score">0</div>
+                            <div class="score-label">/ 100점</div>
+                        </div>
+                    </div>
+                    <div class="score-interpretation" id="preview-interpretation"></div>
+                </div>
+                
+                <div class="preview-breakdown">
+                    <h3>영역별 점수</h3>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">핵심 자존감</span>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" id="bar-core"></div>
+                        </div>
+                        <span class="breakdown-score" id="score-core">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">자기자비</span>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" id="bar-compassion"></div>
+                        </div>
+                        <span class="breakdown-score" id="score-compassion">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">자존감 안정성</span>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" id="bar-stability"></div>
+                        </div>
+                        <span class="breakdown-score" id="score-stability">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">성장 마인드셋</span>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" id="bar-growth"></div>
+                        </div>
+                        <span class="breakdown-score" id="score-growth">0</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">사회적 자존감</span>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" id="bar-social"></div>
+                        </div>
+                        <span class="breakdown-score" id="score-social">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="unlock-section">
+                <div class="unlock-icon">🔓</div>
+                <h2>완전한 분석 보고서 받기</h2>
+                <p class="unlock-description">
+                    이메일을 입력하시면 다음 내용을 포함한<br>
+                    <strong>맞춤형 20페이지 분석 보고서</strong>를 보내드립니다:
+                </p>
+                
+                <div class="report-features">
+                    <div class="report-feature">✓ 당신의 자존감 프로필 상세 분석</div>
+                    <div class="report-feature">✓ 숨겨진 강점 3가지 발견</div>
+                    <div class="report-feature">✓ 약점 보완 전략</div>
+                    <div class="report-feature">✓ 4주 맞춤 성장 로드맵</div>
+                    <div class="report-feature">✓ 동료 비교 데이터 (익명)</div>
+                    <div class="report-feature">✓ 추천 리소스 & 실천 가이드</div>
+                </div>
+                
+                <form class="email-form" id="email-form" action="https://formspree.io/f/xqelgorg" method="POST">
+                    <input type="hidden" name="_subject" value="오늘의 나 - 자존감 분석 결과">
+                    <input type="hidden" name="total_score" id="form-total-score">
+                    <input type="hidden" name="core_score" id="form-core-score">
+                    <input type="hidden" name="compassion_score" id="form-compassion-score">
+                    <input type="hidden" name="stability_score" id="form-stability-score">
+                    <input type="hidden" name="growth_score" id="form-growth-score">
+                    <input type="hidden" name="social_score" id="form-social-score">
+                    <input type="hidden" name="profile_type" id="form-profile-type">
+                    <input type="hidden" name="answers" id="form-answers">
+                    
+                    <div class="email-input-group">
+                        <input 
+                            type="email" 
+                            name="email" 
+                            class="email-input" 
+                            placeholder="이메일 주소를 입력하세요" 
+                            required
+                        >
+                        <button type="submit" class="btn-submit">
+                            완전한 보고서 받기 →
+                        </button>
+                    </div>
+                    <p class="privacy-note">
+                        🔒 귀하의 이메일은 보고서 전송 목적으로만 사용되며, 절대 제3자와 공유하지 않습니다.
+                    </p>
+                </form>
+            </div>
+            
+            <div class="research-footer">
+                <h4>📚 과학적 근거</h4>
+                <ul>
+                    <li>Rosenberg, M. (1965). Society and the adolescent self-image</li>
+                    <li>Cho, Y.M. (2024). MBTI와 자존감의 상관관계 (N=167, r=-0.640, p<0.001)</li>
+                    <li>Neff, K.D. (2023). Self-Compassion: Theory and Research</li>
+                </ul>
+                <p class="disclaimer">
+                    본 검사는 자기 이해를 위한 참고 도구이며, 의료 진단을 대체하지 않습니다.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 감사 페이지 -->
+    <div id="thank-you-page" class="page">
+        <div class="thank-you-container">
+            <div class="thank-you-icon">✅</div>
+            <h1 class="thank-you-title">감사합니다!</h1>
+            <p class="thank-you-message">
+                귀하의 이메일로 <strong>완전한 분석 보고서</strong>를 발송했습니다.<br>
+                스팸 폴더도 확인해주세요.
+            </p>
+            <div class="thank-you-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon">📧</div>
+                    <div class="timeline-content">
+                        <strong>즉시</strong>
+                        <p>기본 분석 보고서 발송</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon">📊</div>
+                    <div class="timeline-content">
+                        <strong>24시간 이내</strong>
+                        <p>맞춤형 상세 분석 보고서</p>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-restart" onclick="restartTest()">
+                다시 검사하기
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
