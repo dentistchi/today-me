@@ -148,31 +148,31 @@ class StrengthExtractor:
         self.strength_patterns = {
             'resilience': {
                 'questions': [6, 18, 33, 41],
-                'threshold': 3.5,
+                'threshold': 2.5,
                 'description': '회복탄력성 (Resilience)',
                 'detail': '어려운 상황에서도 포기하지 않으려는 강한 의지'
             },
             'empathy': {
                 'questions': [14, 27, 38, 45],
-                'threshold': 3.5,
+                'threshold': 2.5,
                 'description': '공감 능력 (Empathy)',
                 'detail': '타인의 감정을 이해하고 배려하는 따뜻한 마음'
             },
             'self_awareness': {
                 'questions': [2, 12, 23, 36, 47],
-                'threshold': 3.3,
+                'threshold': 2.5,
                 'description': '자기인식 (Self-Awareness)',
                 'detail': '자신의 감정과 생각을 객관적으로 이해하는 능력'
             },
             'perseverance': {
                 'questions': [8, 19, 29, 42],
-                'threshold': 3.5,
+                'threshold': 2.5,
                 'description': '끈기 (Perseverance)',
                 'detail': '목표를 향해 꾸준히 노력하는 성실함'
             },
             'optimism': {
                 'questions': [5, 16, 26, 37, 48],
-                'threshold': 3.3,
+                'threshold': 2.5,
                 'description': '낙관성 (Optimism)',
                 'detail': '미래에 대한 희망과 긍정적 기대'
             }

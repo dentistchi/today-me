@@ -34,24 +34,28 @@ class CarelessResponseDetector:
     2. Longstring Analysis (동일 응답 연속)
     3. Even-Odd Consistency (짝수/홀수 일관성)
     4. Mahalanobis Distance (통계적 이상치)
+    5. Low Variance Analysis (낮은 변동성)
     """
     
     def __init__(self,
                  min_time_per_item: float = 2.0,
                  longstring_threshold: int = 10,
                  correlation_threshold: float = 0.3,
-                 mahalanobis_p_threshold: float = 0.001):
+                 mahalanobis_p_threshold: float = 0.001,
+                 variance_threshold: float = 0.3):
         """
         Parameters:
             min_time_per_item: 최소 응답 시간 (초)
             longstring_threshold: 동일 응답 연속 임계값
             correlation_threshold: 짝수/홀수 상관계수 최소값
             mahalanobis_p_threshold: Mahalanobis distance p-value 임계값
+            variance_threshold: 응답 분산 임계값
         """
         self.min_time_per_item = min_time_per_item
         self.longstring_threshold = longstring_threshold
         self.correlation_threshold = correlation_threshold
         self.mahalanobis_p_threshold = mahalanobis_p_threshold
+        self.variance_threshold = variance_threshold
     
     def analyze(self, 
                 responses: List[int], 
@@ -97,6 +101,12 @@ class CarelessResponseDetector:
             if outlier_flag:
                 flags.append("statistical_outlier")
             details["mahalanobis"] = outlier_details
+        
+        # 5) Low Variance 분석 (추가됨)
+        variance_flag, variance_details = self._check_low_variance(responses)
+        if variance_flag:
+            flags.append("low_variance")
+        details["variance"] = variance_details
         
         # 품질 점수 계산 (0-1)
         quality_score = self._calculate_quality_score(flags, details)
@@ -155,7 +165,7 @@ class CarelessResponseDetector:
             "fast_count": fast_count,
             "fast_ratio": round(fast_count / len(times), 3),
             "threshold": self.min_time_per_item,
-            "is_flagged": bool(is_speeder)
+            "is_flagged": is_speeder
         }
     
     def _check_longstring(self, responses: List[int]) -> Tuple[bool, Dict]:
@@ -201,7 +211,7 @@ class CarelessResponseDetector:
             "max_streak": max_streak,
             "threshold": self.longstring_threshold,
             "long_streaks": streaks,
-            "is_flagged": bool(is_longstring)
+            "is_flagged": is_longstring
         }
     
     def _check_consistency(self, responses: List[int]) -> Tuple[bool, Dict]:
@@ -249,7 +259,7 @@ class CarelessResponseDetector:
             "odd_items_count": len(odd_items),
             "even_mean": round(float(np.mean(even_items)), 2),
             "odd_mean": round(float(np.mean(odd_items)), 2),
-            "is_flagged": bool(is_inconsistent)
+            "is_flagged": is_inconsistent
         }
     
     def _check_mahalanobis(self, 
@@ -291,7 +301,7 @@ class CarelessResponseDetector:
                 "distance_squared": round(float(distance**2), 3),
                 "chi2_threshold": round(float(chi2_threshold), 3),
                 "p_value": round(p_value, 6),
-                "is_flagged": bool(is_outlier)
+                "is_flagged": is_outlier
             }
         except Exception as e:
             return False, {
@@ -299,6 +309,22 @@ class CarelessResponseDetector:
                 "is_flagged": False
             }
     
+    def _check_low_variance(self, responses: List[int]) -> Tuple[bool, Dict]:
+        """
+        응답 분산 분석 (너무 일관된 응답 감지)
+        
+        감지 패턴:
+        - 응답의 분산 < 0.3 (예: 거의 모든 응답이 동일)
+        """
+        variance = np.var(responses)
+        is_low_variance = variance < self.variance_threshold
+        
+        return is_low_variance, {
+            "variance": round(float(variance), 3),
+            "threshold": self.variance_threshold,
+            "is_flagged": is_low_variance
+        }
+
     def _calculate_quality_score(self, flags: List[str], details: Dict) -> float:
         """
         품질 점수 계산 (0-1)
@@ -352,6 +378,11 @@ class CarelessResponseDetector:
             
             if p_value < 0.01:
                 score -= 0.20
+        
+        # Low Variance (20%)
+        if "variance" in details and details["variance"]["is_flagged"]:
+            # 분산이 너무 낮으면 감점
+            score -= 0.20
         
         return max(0.0, min(1.0, score))
     

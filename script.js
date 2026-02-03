@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = form.querySelector('.btn-submit');
             const originalBtnText = submitBtn.innerText;
             submitBtn.disabled = true;
-            submitBtn.innerText = '전송 중...';
+            submitBtn.innerText = '분석 보고서 생성 중...';
             
             // Google Apps Script URL 사용 (HTML form의 action 속성)
             fetch(form.action, {
