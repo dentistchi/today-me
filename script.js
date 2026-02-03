@@ -446,43 +446,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const reverse_items = allQuestions.map((q, i) => q.reverse ? i : -1).filter(i => i !== -1);
-            
-            const requestData = {
-                user_id: emailValue,
-                responses: answers,
-                response_times: responseTimes,
-                reverse_items: reverse_items,
-            };
-            
             // 버튼 로딩 상태 표시
             const submitBtn = form.querySelector('.btn-submit');
             const originalBtnText = submitBtn.innerText;
             submitBtn.disabled = true;
-            submitBtn.innerText = '분석 중...';
+            submitBtn.innerText = '전송 중...';
             
-            fetch('http://localhost:8001/api/assess', {
+            // Google Apps Script URL 사용 (HTML form의 action 속성)
+            fetch(form.action, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData),
+                body: new FormData(form),
             })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success' || data.status === 'warning') {
-                    // 성공 또는 경고 시, 결과에 따라 UI 업데이트
-                    // 예를 들어, 보정된 점수를 결과 페이지에 다시 표시할 수 있습니다.
-                    // 지금은 감사 페이지로 이동합니다.
+                // Google Apps Script 응답 처리 ({"result":"success"})
+                if (data.result === 'success') {
                     showPage('thank-you-page');
                 } else {
-                    // 'invalid' 또는 다른 에러 상태
-                    alert(`오류: ${data.message}`);
+                    alert('오류가 발생했습니다. 다시 시도해주세요.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('서버에 연결할 수 없습니다. API 서버가 실행 중인지 확인해주세요.');
+                alert('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
             })
             .finally(() => {
                 // 버튼 상태 복구
