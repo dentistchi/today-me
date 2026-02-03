@@ -437,6 +437,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Google Apps Script URL 설정 확인
+            if (form.action.includes('YOUR_GOOGLE_SCRIPT_WEB_APP_URL')) {
+                alert('설정 오류: Google Apps Script URL이 설정되지 않았습니다.\nindex.html 파일에서 form action 값을 실제 웹 앱 URL로 변경해주세요.');
+                return;
+            }
+            
             // Google Sheets 전송을 위한 데이터 준비
             const formData = new FormData(form);
             const searchParams = new URLSearchParams();
@@ -464,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+                alert('전송 중 오류가 발생했습니다.\n1. Google Apps Script 배포 시 "모든 사용자(Anyone)" 권한으로 설정했는지 확인해주세요.\n2. 인터넷 연결을 확인해주세요.');
             })
             .finally(() => {
                 // 버튼 상태 복구
