@@ -35,6 +35,7 @@ function doPost(e) {
   
   // 3. 이메일 본문(HTML) 생성
   var emailBody = createEmailTemplate(params);
+  var textBody = createTextTemplate(params); // 텍스트 본문 생성 (스팸 방지용)
   
   // 4. 사용자에게 이메일 발송
   try {
@@ -42,7 +43,9 @@ function doPost(e) {
       to: params.email,
       subject: "[오늘의 나] " + params.profile_type + " 유형 분석 결과 보고서",
       htmlBody: emailBody,
-      name: "오늘의 나 연구팀"
+      body: textBody, // 텍스트 본문 추가 (HTML을 못 읽는 환경 및 스팸 필터 회피용)
+      name: "오늘의 나 연구팀",
+      replyTo: Session.getActiveUser().getEmail() // 답장 주소 명시 (신뢰도 상승)
     });
   } catch (error) {
     console.error("사용자 이메일 발송 실패: " + error);
@@ -101,4 +104,26 @@ function createEmailTemplate(data) {
       </div>
     </div>
   `;
+}
+
+function createTextTemplate(data) {
+  var score = parseInt(data.total_score);
+  var feedback = "";
+  
+  if (score >= 70) {
+    feedback = "당신의 자존감은 매우 건강한 상태입니다.";
+  } else if (score >= 40) {
+    feedback = "당신의 자존감은 보통 수준입니다.";
+  } else {
+    feedback = "현재 자존감이 다소 낮아져 있는 상태로 보입니다.";
+  }
+
+  return "[오늘의 나] 분석 리포트\n\n" +
+         "유형: " + data.profile_type + "\n" +
+         "총점: " + data.total_score + "점\n\n" +
+         "안녕하세요, 진단 결과가 도착했습니다.\n" +
+         "당신의 자존감 총점은 " + data.total_score + "점입니다.\n\n" +
+         feedback + "\n\n" +
+         "※ 자세한 디자인이 포함된 결과는 HTML 지원 환경에서 확인해주세요.\n\n" +
+         "© 2024 오늘의 나. All rights reserved.";
 }

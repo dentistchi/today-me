@@ -96,6 +96,8 @@ const questionDatabase = {
 // ========== 전역 변수 ==========
 let currentQuestionIndex = 0;
 let answers = [];
+let responseTimes = [];
+let questionStartTime = 0;
 let allQuestions = [];
 let scores = {};
 
@@ -112,6 +114,7 @@ function init() {
     
     // 답변 배열 초기화
     answers = Array(50).fill(0);
+    responseTimes = Array(50).fill(0);
 }
 
 // ========== 테스트 시작 ==========
@@ -171,12 +174,18 @@ function displayQuestion() {
     } else {
         backBtn.style.display = 'block';
     }
+
+    questionStartTime = Date.now();
 }
 
 // ========== 답변 선택 ==========
 function selectAnswer(value) {
     answers[currentQuestionIndex] = value;
     
+    // 응답 시간 기록
+    const responseTime = (Date.now() - questionStartTime) / 1000; // 초 단위
+    responseTimes[currentQuestionIndex] = responseTime;
+
     // 선택 표시
     document.querySelectorAll('.answer-option').forEach(btn => {
         btn.classList.remove('selected');
@@ -436,41 +445,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 emailInput.focus();
                 return;
             }
+
+            const reverse_items = allQuestions.map((q, i) => q.reverse ? i : -1).filter(i => i !== -1);
             
-            // Google Apps Script URL 설정 확인
-            if (form.action.includes('YOUR_GOOGLE_SCRIPT_WEB_APP_URL')) {
-                alert('설정 오류: Google Apps Script URL이 설정되지 않았습니다.\nindex.html 파일에서 form action 값을 실제 웹 앱 URL로 변경해주세요.');
-                return;
-            }
-            
-            // Google Sheets 전송을 위한 데이터 준비
-            const formData = new FormData(form);
-            const searchParams = new URLSearchParams();
-            
-            for (const pair of formData.entries()) {
-                searchParams.append(pair[0], pair[1]);
-            }
+            const requestData = {
+                user_id: emailValue,
+                responses: answers,
+                response_times: responseTimes,
+                reverse_items: reverse_items,
+            };
             
             // 버튼 로딩 상태 표시
             const submitBtn = form.querySelector('.btn-submit');
             const originalBtnText = submitBtn.innerText;
             submitBtn.disabled = true;
-            submitBtn.innerText = '전송 중...';
+            submitBtn.innerText = '분석 중...';
             
-            fetch(form.action, {
+            fetch('http://localhost:8001/api/assess', {
                 method: 'POST',
-                body: searchParams
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
             })
-            .then(response => {
-                if (response.ok) {
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' || data.status === 'warning') {
+                    // 성공 또는 경고 시, 결과에 따라 UI 업데이트
+                    // 예를 들어, 보정된 점수를 결과 페이지에 다시 표시할 수 있습니다.
+                    // 지금은 감사 페이지로 이동합니다.
                     showPage('thank-you-page');
                 } else {
-                    alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+                    // 'invalid' 또는 다른 에러 상태
+                    alert(`오류: ${data.message}`);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('전송 중 오류가 발생했습니다.\n1. Google Apps Script 배포 시 "모든 사용자(Anyone)" 권한으로 설정했는지 확인해주세요.\n2. 인터넷 연결을 확인해주세요.');
+                alert('서버에 연결할 수 없습니다. API 서버가 실행 중인지 확인해주세요.');
             })
             .finally(() => {
                 // 버튼 상태 복구

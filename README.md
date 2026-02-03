@@ -1,375 +1,446 @@
-# 자존감 분석 시스템 v1.0
+# Phase 1 구현: 부주의 응답 감지 + 응답 스타일 보정
 
-## 📋 개요
-50개 질문 기반의 다차원 자존감 분석 웹 애플리케이션입니다. 사용자의 응답을 분석하여 6가지 자존감 유형을 도출하고, Google Sheets 및 이메일로 결과를 자동 발송합니다.
+**목표**: 2주 안에 정확도 +15% 달성  
+**비용**: 0원  
+**개발 기간**: 2주
 
-## 🎯 주요 기능
-*   **5차원 자존감 분석**: 핵심 자존감, 자기 자비, 안정성, 성장 마인드셋, 사회적 자존감
-*   **실시간 결과 시각화**: SVG 그래프 및 애니메이션을 통한 즉각적인 피드백
-*   **자동 이메일 리포트**: Google Apps Script를 활용한 맞춤형 결과 보고서 발송
-*   **데이터 수집**: Google Sheets에 모든 응답 데이터 자동 저장
+---
 
-## 📦 구성 요소
-```
-self-esteem-system/
-├── self_esteem_system.py      # Python 분석 엔진
-├── example_integration.js      # Node.js 연동 예시
-├── README.md                   # 이 파일
-└── requirements.txt            # Python 의존성
-```
+## 📦 패키지 내용
+
+### 1. 핵심 모듈
+- `careless_response_detector.py` - 부주의 응답 감지기
+- `response_style_corrector.py` - 응답 스타일 보정기
+- `api.py` - FastAPI REST API
+
+### 2. 테스트
+- `tests/test_detector.py` - 감지기 단위 테스트
+- `tests/test_corrector.py` - 보정기 단위 테스트
+- `tests/test_api.py` - API 통합 테스트
+
+### 3. 문서
+- `README.md` - 이 파일
+- `DEPLOYMENT.md` - 배포 가이드
+
+---
 
 ## 🚀 빠른 시작
 
-### 1. Python 분석 엔진 실행
+### 설치
 
 ```bash
-# 의존성 설치
+# 1. Python 가상환경 생성
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 2. 의존성 설치
 pip install -r requirements.txt
 
-# 예시 실행
-python3 self_esteem_system.py
+# 3. 테스트 실행
+pytest tests/
+
+# 4. API 서버 시작
+python api.py
 ```
 
-**출력 예시:**
-```
-============================================================
-자존감 분석 시스템 v1.0
-============================================================
+서버 시작 후:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-✅ 분석 완료! 결과가 self_esteem_results_20240202_143022.json에 저장되었습니다.
+---
 
-📊 프로파일 요약:
-- Rosenberg 점수: 23/40
-- 자존감 유형: developing_balanced
+## 📊 기능 설명
 
-✨ 발견된 강점: 3개
-```
+### 1. 부주의 응답 감지 (CarelessResponseDetector)
 
-### 2. 웹 애플리케이션 통합
+**4가지 감지 기법:**
 
-#### Node.js/Express 예시
-
-```javascript
-const express = require('express');
-const app = express();
-
-// 라우터 등록
-const testRouter = require('./example_integration');
-app.use('/', testRouter);
-
-// 서버 시작
-app.listen(3000, () => {
-  console.log('서버 시작: http://localhost:3000');
-});
+#### ① 응답 시간 분석
+```python
+# 평균 2초 미만 → Speeder 플래그
+# 연속 3개 이상 1초 미만 → Speeder 플래그
+detector.analyze(responses, response_times)
 ```
 
-#### API 호출
+**학술 근거**: Curran (2016), 1701 인용
 
-```javascript
-// 프론트엔드
-const submitTest = async (responses) => {
-  const res = await fetch('/api/test/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      userName: '홍길동',
-      userEmail: 'user@example.com',
-      responses: responses,  // [1, 2, 3, ...] (50개)
-      responseTimes: responseTimes  // 선택사항
-    })
-  });
-  
-  return res.json();
-};
+#### ② Longstring 분석
+```python
+# 동일 응답 10개 이상 연속 → Longstring 플래그
+# 예: [2,2,2,2,2,2,2,2,2,2,...]
 ```
 
-## 📊 응답 데이터 형식
+**학술 근거**: Johnson (2005)
 
-### 질문 구조 (50개)
-
-```javascript
-const responses = [
-  // Rosenberg Self-Esteem (10개, 인덱스 0-9)
-  2, 3, 2, 3, 2, 3, 2, 2, 3, 2,
-  
-  // Self-Compassion (12개, 인덱스 10-21)
-  3, 2, 3, 2, 3, 2, 3, 3, 2, 3, 2, 3,
-  
-  // Growth Mindset (8개, 인덱스 22-29)
-  3, 2, 3, 3, 3, 4, 3, 3,
-  
-  // Relational (10개, 인덱스 30-39)
-  3, 2, 3, 2, 3, 3, 3, 3, 2, 3,
-  
-  // Implicit (10개, 인덱스 40-49)
-  3, 3, 2, 3, 3, 3, 2, 3, 3, 3
-];
-
-// 응답 척도: 1 (전혀 아니다) ~ 4 (매우 그렇다)
+#### ③ 짝수/홀수 일관성
+```python
+# 짝수 질문 vs 홀수 질문 상관계수 < 0.3 → 불일치 플래그
+even = [Q0, Q2, Q4, ...]
+odd = [Q1, Q3, Q5, ...]
+correlation = corr(even, odd)
 ```
 
-### 분석 결과 형식
+**학술 근거**: Ward & Meade (2023), 494 인용
 
-```json
-{
-  "profile": {
-    "scores": {
-      "rosenberg": 23,
-      "rosenberg_max": 40,
-      "self_compassion": 2.75,
-      "mindset": 3.12,
-      "relational": 2.9,
-      "implicit": 2.8
-    },
-    "esteem_type": "developing_balanced",
-    "dimensions": {
-      "자존감_안정성": 5.7,
-      "자기_자비": 5.5,
-      "성장_마인드셋": 6.2,
-      "관계적_독립성": 5.8,
-      "암묵적_자존감": 5.6
-    }
-  },
-  "strengths": [
-    {
-      "name": "회복탄력성 (Resilience)",
-      "detail": "어려운 상황에서도 포기하지 않으려는 강한 의지",
-      "score": 3.75,
-      "evidence_questions": [6, 18, 33]
-    }
-  ],
-  "emails": {
-    "basic": { ... },
-    "intermediate": { ... },
-    "detailed": { ... }
-  }
-}
+#### ④ Mahalanobis Distance
+```python
+# 통계적 이상치 감지
+# D² > χ²(p=0.001) → 이상치 플래그
 ```
 
-## 🎯 자존감 유형 분류
+**학술 근거**: Mahalanobis (1936)
 
-| 유형 | Rosenberg | Self-Compassion | 특징 |
-|------|-----------|-----------------|------|
-| **vulnerable** | < 20 | < 2.5 | 취약형: 자기비판 + 낮은 자존감 |
-| **compassionate_grower** | < 20 | ≥ 2.5 | 자비로운 성장형 |
-| **developing_critic** | 20-29 | < 3.0 | 발전형 (자기비판) |
-| **developing_balanced** | 20-29 | ≥ 3.0 | 발전형 (균형) |
-| **stable_rigid** | ≥ 30 | < 3.5 | 안정형이나 경직 |
-| **thriving** | ≥ 30 | ≥ 3.5 | 번영형 (가장 건강) |
+### 2. 응답 스타일 보정 (ResponseStyleCorrector)
 
-## 📧 이메일 발송 시스템
+**3가지 보정 기법:**
 
-### 타이밍 전략
-
-```
-테스트 완료
-    ↓
-[즉시] VERSION 1: 감사 + 기대감
-    ↓ (2시간 대기)
-[2시간 후] VERSION 2: 기본 분석 + 강점
-    ↓ (22시간 대기)
-[24시간 후] VERSION 3: 완전 보고서 + PDF
+#### ① Extreme Responding
+```python
+# 1번 or 4번이 70% 이상 → 정규화
+# Z-score 변환 후 1-4 재매핑
 ```
 
-### SMTP 설정 예시
-
-```javascript
-// Gmail 사용
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'your-email@gmail.com',
-    pass: 'your-app-password'  // 2단계 인증 후 앱 비밀번호
-  }
-});
-
-// SendGrid 사용 (추천)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.sendgrid.net',
-  port: 587,
-  auth: {
-    user: 'apikey',
-    pass: process.env.SENDGRID_API_KEY
-  }
-});
+#### ② Midpoint Responding
+```python
+# 2번 or 3번이 70% 이상 → 분산 증가
 ```
 
-## 🛠️ 기술 스택
+#### ③ Acquiescence Bias
+```python
+# 역문항 불일치 70% 이상 → 역문항 뒤집기
+# 예: 역문항에서 4 → 1로 변환
+```
 
-### Backend
-- **Python 3.8+**: 분석 엔진
-- **Node.js 16+**: 웹 서버
-- **Express**: API 라우팅
-- **Bull + Redis**: 작업 큐
+**학술 근거**: Böckenholt & Meiser (2017), 163 인용
 
-### 이메일
-- **Nodemailer**: 이메일 발송
-- **PDFKit**: PDF 생성
+---
 
-### 데이터베이스
-- **MongoDB**: 사용자 데이터 저장
-- **Redis**: 큐 관리
+## 🔧 API 사용법
 
-## 📝 환경 변수 설정
+### 엔드포인트 1: 평가 실행
 
 ```bash
-# .env 파일 생성
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=465
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+POST /api/assess
+Content-Type: application/json
 
-MONGODB_URI=mongodb://localhost:27017/selfesteem
-REDIS_URL=redis://localhost:6379
-
-NODE_ENV=production
-PORT=3000
-```
-
-## 🔧 커스터마이징 가이드
-
-### 1. 질문 수정
-
-`self_esteem_system.py`에서 문항 인덱스 수정:
-
-```python
-self.rosenberg_items = {
-    'positive': [0, 1, 3, 5, 6],  # 원하는 인덱스로 변경
-    'negative': [2, 4, 7, 8, 9]
+{
+  "user_id": "user123",
+  "responses": [3, 2, 4, 1, ...],  // 50개
+  "response_times": [4.5, 3.2, ...],  // 50개
+  "reverse_items": [2, 4, 7, 8, 9]  // 선택
 }
 ```
 
-### 2. 이메일 템플릿 수정
-
-`EmailTemplateGenerator` 클래스의 메서드 편집:
-
-```python
-def generate_basic_email(self, user_name, user_email):
-    template = f"""
-    # 여기에 원하는 내용 작성
-    """
-    return template
-```
-
-### 3. 강점 패턴 추가
-
-```python
-self.strength_patterns['creativity'] = {
-    'questions': [5, 15, 25, 35],
-    'threshold': 3.5,
-    'description': '창의성',
-    'detail': '새로운 아이디어를 생각하는 능력'
+**응답 예시 (성공):**
+```json
+{
+  "user_id": "user123",
+  "status": "success",
+  "message": "평가가 성공적으로 완료되었습니다.",
+  "data_quality": {
+    "quality_score": 0.85,
+    "flags": [],
+    "recommendation": "excellent"
+  },
+  "corrected_responses": [3, 2, 4, 1, ...],
+  "style_corrections": {
+    "corrections_applied": [],
+    "style_scores": {
+      "extreme_responding": 0.24,
+      "midpoint_responding": 0.56,
+      "acquiescence": 0.15
+    }
+  }
 }
 ```
 
-## 📈 성능 최적화
+**응답 예시 (거부):**
+```json
+{
+  "status": "invalid",
+  "message": "응답 품질이 낮습니다:\n⚠️ 너무 빠르게 응답하셨습니다.\n⚠️ 동일한 답변이 너무 많습니다.",
+  "data_quality": {
+    "quality_score": 0.35,
+    "flags": ["speeding", "longstring"],
+    "recommendation": "reject"
+  }
+}
+```
 
-### 1. 이메일 발송 속도
+### 엔드포인트 2: A/B 테스트
+
+```bash
+POST /api/assess-ab
+# 동일한 request body
+
+# 응답에 test_group 추가됨
+{
+  ...,
+  "test_group": "treatment"  // or "control"
+}
+```
+
+### 엔드포인트 3: 통계 조회
+
+```bash
+GET /api/ab-stats
+
+# 응답
+{
+  "control_group": {
+    "avg_quality_score": 0.72,
+    "flagged_rate": 0.25
+  },
+  "treatment_group": {
+    "avg_quality_score": 0.85,
+    "flagged_rate": 0.10
+  },
+  "improvement": {
+    "quality_score": "+18%",
+    "flagged_rate": "-60%"
+  }
+}
+```
+
+---
+
+## 🧪 테스트
+
+### 단위 테스트 실행
+
+```bash
+# 전체 테스트
+pytest tests/ -v
+
+# 개별 모듈
+pytest tests/test_detector.py -v
+pytest tests/test_corrector.py -v
+
+# 커버리지 확인
+pytest tests/ --cov=. --cov-report=html
+open htmlcov/index.html
+```
+
+### 수동 테스트
+
+```python
+# 감지기 테스트
+python careless_response_detector.py
+
+# 보정기 테스트
+python response_style_corrector.py
+
+# API 테스트
+python api.py
+# 브라우저에서 http://localhost:8000/docs
+```
+
+---
+
+## 📈 성능 지표
+
+### 목표 vs. 실제 (2주 후 측정)
+
+| 지표 | 현재 | 목표 | 측정 방법 |
+|------|------|------|-----------|
+| Test-Retest 상관 | 0.70 | 0.80+ | 4주 후 재검사 |
+| 부주의 응답률 | 25% | 10% | 플래그 발생률 |
+| 완료율 | 65% | 75%+ | 제출/시작 비율 |
+| 품질 점수 평균 | 0.72 | 0.85+ | quality_score |
+
+---
+
+## 🔄 프론트엔드 통합
+
+### React 예시
 
 ```javascript
-// Bull Queue 동시 처리 설정
-emailQueue.process('send-email', 5, async (job) => {
-  // 최대 5개 이메일 동시 발송
-});
-```
+import { useState } from 'react';
 
-### 2. PDF 생성 캐싱
-
-```javascript
-// Redis 캐싱
-const cachedPDF = await redis.get(`pdf:${testResultId}`);
-if (cachedPDF) {
-  return cachedPDF;
+export default function AssessmentForm() {
+  const [responses, setResponses] = useState(Array(50).fill(null));
+  const [startTimes, setStartTimes] = useState({});
+  
+  const handleQuestionFocus = (qId) => {
+    setStartTimes(prev => ({ ...prev, [qId]: Date.now() }));
+  };
+  
+  const handleQuestionBlur = (qId, response) => {
+    const duration = (Date.now() - startTimes[qId]) / 1000;
+    
+    setResponses(prev => {
+      const newResp = [...prev];
+      newResp[qId] = response;
+      return newResp;
+    });
+    
+    setResponseTimes(prev => {
+      const newTimes = [...prev];
+      newTimes[qId] = duration;
+      return newTimes;
+    });
+  };
+  
+  const handleSubmit = async () => {
+    const res = await fetch('/api/assess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: getUserId(),
+        responses,
+        response_times: responseTimes
+      })
+    });
+    
+    const result = await res.json();
+    
+    if (result.status === 'invalid') {
+      alert(result.message);  // 품질 경고 표시
+      // 재검사 권유
+    } else {
+      navigateToResults(result);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* 질문들 */}
+    </form>
+  );
 }
 ```
+
+---
+
+## 📚 참고 논문
+
+1. **Ward, M. K., & Meade, A. W. (2023)**. Dealing with careless responding in survey data. *Annual Review of Psychology*, 74, 1-26. [494 citations]
+
+2. **Curran, P. G. (2016)**. Methods for the detection of carelessly invalid responses. *Journal of Experimental Social Psychology*, 66, 4-19. [1701 citations]
+
+3. **Böckenholt, U., & Meiser, T. (2017)**. Response style analysis with threshold and multi-process IRT models. *British Journal of Mathematical and Statistical Psychology*, 70(1), 159-176. [163 citations]
+
+4. **Johnson, J. A. (2005)**. Ascertaining the validity of individual protocols. *Journal of Research in Personality*, 39, 103-129.
+
+---
 
 ## 🐛 트러블슈팅
 
-### 문제: 이메일이 스팸함으로 가는 경우
-
-**해결책:**
-1. SPF 레코드 설정
-```
-v=spf1 include:_spf.google.com ~all
-```
-
-2. DKIM 서명 추가
-```javascript
-const transporter = nodemailer.createTransport({
-  // ...
-  dkim: {
-    domainName: 'yourdomain.com',
-    keySelector: 'default',
-    privateKey: fs.readFileSync('private-key.pem')
-  }
-});
-```
-
-### 문제: Python 프로세스 실행 오류
-
-**해결책:**
+### 문제 1: ImportError
 ```bash
-# Python 경로 확인
-which python3
-
-# 의존성 재설치
-pip3 install --upgrade -r requirements.txt
+# 해결: 모듈을 같은 디렉토리에 배치
+phase1_implementation/
+  ├── careless_response_detector.py
+  ├── response_style_corrector.py
+  └── api.py
 ```
 
-### 문제: PDF 한글 깨짐
+### 문제 2: CORS 에러
+```python
+# api.py에서 origins 수정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # 프론트엔드 주소
+)
+```
 
-**해결책:**
+### 문제 3: 느린 Mahalanobis 계산
+```python
+# reference_data 없이 실행 (처음 500명 수집 전)
+detector.analyze(responses, times, reference_data=None)
+```
+
+---
+
+## 🚀 배포
+
+### Docker (권장)
+
+```dockerfile
+# Dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+EXPOSE 8000
+
+CMD ["python", "api.py"]
+```
+
 ```bash
-# 한글 폰트 설치 (Ubuntu)
-sudo apt-get install fonts-nanum
-
-# 폰트 경로 확인
-fc-list | grep Nanum
+# 빌드 및 실행
+docker build -t phase1-api .
+docker run -p 8000:8000 phase1-api
 ```
 
-## 📚 참고 자료
+### 직접 배포 (Ubuntu)
 
-### 심리학 연구
-- Rosenberg Self-Esteem Scale (1965)
-- Neff's Self-Compassion Scale (2003)
-- Dweck's Growth Mindset Theory (2006)
+```bash
+# 1. 서버 준비
+sudo apt update
+sudo apt install python3-pip python3-venv nginx
 
-### 기술 문서
-- [Nodemailer 공식 문서](https://nodemailer.com/)
-- [Bull Queue 가이드](https://github.com/OptimalBits/bull)
-- [PDFKit 문서](https://pdfkit.org/)
+# 2. 코드 배포
+cd /var/www
+git clone <repo-url> phase1
+cd phase1
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-## 🤝 기여 가이드
+# 3. Systemd 서비스 등록
+sudo nano /etc/systemd/system/phase1.service
 
-버그 리포트나 기능 제안은 GitHub Issues에 등록해주세요.
+[Unit]
+Description=Phase 1 API
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/var/www/phase1
+ExecStart=/var/www/phase1/venv/bin/python api.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+# 4. 서비스 시작
+sudo systemctl enable phase1
+sudo systemctl start phase1
+
+# 5. Nginx 리버스 프록시 설정
+sudo nano /etc/nginx/sites-available/phase1
+
+server {
+    listen 80;
+    server_name your-domain.com;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+sudo ln -s /etc/nginx/sites-available/phase1 /etc/nginx/sites-enabled/
+sudo systemctl reload nginx
+```
+
+---
+
+## 📞 지원
+
+문의사항:
+- 이메일: support@example.com
+- GitHub Issues: <repo-url>/issues
+
+---
 
 ## 📄 라이선스
 
 MIT License
 
-## 👥 제작자
-
-자존감 연구팀 (2024)
-
----
-
-## 🚀 다음 단계
-
-### 단기 (1-2주)
-- [ ] 이메일 발송 버그 수정
-- [ ] 6가지 프로파일 템플릿 완성
-- [ ] 기본 PDF 생성 기능
-
-### 중기 (1개월)
-- [ ] 50개 질문지 완성 및 검증
-- [ ] 웹 인터페이스 개발
-- [ ] 데이터베이스 설계
-
-### 장기 (3개월)
-- [ ] 4주 프로그램 자동 이메일
-- [ ] 재검사 및 성장 곡선 시각화
-- [ ] 커뮤니티 기능
-
----
-
-**문의**: team@selfesteem.com
+Copyright (c) 2026 자존감 평가 시스템 개발팀
