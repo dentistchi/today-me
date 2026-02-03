@@ -45,7 +45,7 @@
                 </div>
                 
                 <div class="cta-section">
-                    <button class="btn-start" onclick="startTest()">
+                    <button type="button" class="btn-start" onclick="startTest()">
                         <span>무료로 시작하기</span>
                         <span class="btn-arrow">→</span>
                     </button>
@@ -84,7 +84,7 @@
                 <p class="question-hint">최근 한 달을 기준으로 솔직하게 답변해주세요</p>
                 
                 <div class="answers-container">
-                    <button class="answer-option" data-value="1" onclick="selectAnswer(1)">
+                    <button type="button" class="answer-option" data-value="1" onclick="selectAnswer(1)">
                         <div class="answer-radio"></div>
                         <div class="answer-content">
                             <div class="answer-label">전혀 그렇지 않다</div>
@@ -92,7 +92,7 @@
                         </div>
                     </button>
                     
-                    <button class="answer-option" data-value="2" onclick="selectAnswer(2)">
+                    <button type="button" class="answer-option" data-value="2" onclick="selectAnswer(2)">
                         <div class="answer-radio"></div>
                         <div class="answer-content">
                             <div class="answer-label">그렇지 않다</div>
@@ -100,7 +100,7 @@
                         </div>
                     </button>
                     
-                    <button class="answer-option" data-value="3" onclick="selectAnswer(3)">
+                    <button type="button" class="answer-option" data-value="3" onclick="selectAnswer(3)">
                         <div class="answer-radio"></div>
                         <div class="answer-content">
                             <div class="answer-label">그렇다</div>
@@ -108,7 +108,7 @@
                         </div>
                     </button>
                     
-                    <button class="answer-option" data-value="4" onclick="selectAnswer(4)">
+                    <button type="button" class="answer-option" data-value="4" onclick="selectAnswer(4)">
                         <div class="answer-radio"></div>
                         <div class="answer-content">
                             <div class="answer-label">매우 그렇다</div>
@@ -118,7 +118,7 @@
                 </div>
                 
                 <div class="navigation-buttons">
-                    <button class="btn-back" id="btn-back" onclick="previousQuestion()">
+                    <button type="button" class="btn-back" id="btn-back" onclick="previousQuestion()">
                         ← 이전
                     </button>
                 </div>
@@ -216,7 +216,8 @@
                     <div class="report-feature">✓ 추천 리소스 & 실천 가이드</div>
                 </div>
                 
-                <form class="email-form" id="email-form" action="https://formspree.io/f/xqelgorg" method="POST">
+                <!-- Google Apps Script 웹 앱 URL로 교체 필요 -->
+                <form class="email-form" id="email-form" action="YOUR_GOOGLE_SCRIPT_WEB_APP_URL" method="POST">
                     <input type="hidden" name="_subject" value="오늘의 나 - 자존감 분석 결과">
                     <input type="hidden" name="total_score" id="form-total-score">
                     <input type="hidden" name="core_score" id="form-core-score">
@@ -284,7 +285,7 @@
                     </div>
                 </div>
             </div>
-            <button class="btn-restart" onclick="restartTest()">
+            <button type="button" class="btn-restart" onclick="restartTest()">
                 다시 검사하기
             </button>
         </div>
