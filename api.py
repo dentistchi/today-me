@@ -193,9 +193,6 @@ async def assess_responses(request: AssessmentRequest):
             pdf_filename = f"{user_name}_자존감분석_{timestamp}.pdf"
             pdf_path = os.path.join(PDF_OUTPUT_DIR, pdf_filename)
             
-            # PDF 생성기 초기화
-            pdf_gen = EnhancedPDFGenerator()
-            
             # 보고서 데이터 준비
             report_data = {
                 'user_name': user_name,
@@ -208,12 +205,15 @@ async def assess_responses(request: AssessmentRequest):
                 'retest_link': 'https://yoursite.com/retest'
             }
             
-            # PDF 생성
-            pdf_gen.generate_report(report_data, pdf_path)
+            # PDF 생성기 초기화 및 생성
+            pdf_gen = EnhancedPDFGenerator(report_data, pdf_path)
+            pdf_gen.generate()
             print(f"✅ PDF 생성 완료: {pdf_path}")
             
         except Exception as e:
+            import traceback
             print(f"❌ PDF 생성 실패: {e}")
+            print(traceback.format_exc())
             pdf_path = None
         
         # Step 4: 3단계 이메일 예약 발송
