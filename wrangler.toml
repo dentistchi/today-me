@@ -1,0 +1,8 @@
+name = "today-me"
+compatibility_date = "2024-01-01"
+
+# Pages 설정
+pages_build_output_dir = "dist"
+
+[env.production]
+name = "today-me"
