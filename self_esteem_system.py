@@ -10,6 +10,20 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 import hashlib
 
+# 연구 참고문헌 임포트
+from research_references import (
+    get_short_citation, 
+    format_inline_citation,
+    format_reference_list
+)
+
+# 개인화된 컨텐츠 임포트
+from personalized_content import (
+    get_profile_explanation,
+    generate_personalized_roadmap,
+    generate_pentagon_chart_data
+)
+
 
 # ==================== 1. 점수 계산 엔진 ====================
 
@@ -350,8 +364,18 @@ P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
     
     def generate_detailed_email(self, user_name: str, profile: Dict,
                                strengths: List[Dict]) -> str:
-        """VERSION 3: 상세 이메일 (24시간 후)"""
+        """VERSION 3: 상세 이메일 (24시간 후) - 개인화"""
         dimensions = profile['dimensions']
+        esteem_type = profile['esteem_type']
+        
+        # 프로파일 설명 가져오기
+        profile_info = get_profile_explanation(esteem_type)
+        
+        # 오각형 차트 데이터
+        chart_data = generate_pentagon_chart_data(dimensions)
+        
+        # 개인화된 4주 로드맵
+        roadmap = generate_personalized_roadmap(profile, dimensions)
         
         template = f"""
 제목: 💎 {user_name}님을 위한 완전한 분석 보고서 (PDF 첨부)
@@ -369,74 +393,61 @@ P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
 
 이 이메일에 첨부된 PDF에는:
 • 당신의 완전한 심리학적 프로파일
-• 5가지 차원 분석 차트
-• 당신만의 4주 성장 로드맵
+• 5가지 차원 분석 차트 (오각형 그래프)
+• 당신만의 4주 성장 로드맵 (개인 맞춤형)
 • 50개 질문 상세 해석
 
 이 모두가 담겨 있습니다.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-🎯 당신은 누구인가: 5차원 분석
+{profile_info['emoji']} 당신의 자존감 프로파일
 ━━━━━━━━━━━━━━━━━━━━━━
+
+당신은 <{profile_info['name']}> 유형입니다.
+
+{profile_info['short_desc']}
+
+{profile_info['full_desc']}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📊 당신의 5차원 분석 (오각형 그래프)
+━━━━━━━━━━━━━━━━━━━━━━
+
+당신의 자존감은 5가지 차원으로 구성됩니다:
 
 1️⃣ 자존감 안정성: {dimensions['자존감_안정성']}/10
-   (Contingent ←→ True Self-Esteem)
+   {format_inline_citation('crocker_park_2004', '외부 평가에 흔들리지 않는 안정적 자기가치')}
+   {self._get_dimension_explanation('자존감_안정성', dimensions['자존감_안정성'])}
 
 2️⃣ 자기 자비: {dimensions['자기_자비']}/10  
-   (Self-Criticism ←→ Self-Compassion)
+   {format_inline_citation('neff_2003', '실수했을 때 자신을 대하는 방식')}
+   {self._get_dimension_explanation('자기_자비', dimensions['자기_자비'])}
+   
+   💡 연구 결과: {format_inline_citation('neff_germer_2013', '8주간 자기자비 훈련 후 자존감 23% 상승, 우울 32% 감소')}
 
 3️⃣ 성장 마인드셋: {dimensions['성장_마인드셋']}/10
-   (Fixed ←→ Growth Mindset)
+   {format_inline_citation('dweck_2006', '능력에 대한 믿음: 고정 vs 성장 가능')}
+   {self._get_dimension_explanation('성장_마인드셋', dimensions['성장_마인드셋'])}
 
-4️⃣ 관계적 자존감: {dimensions['관계적_독립성']}/10
-   (Dependent ←→ Independent)
+4️⃣ 관계적 독립성: {dimensions['관계적_독립성']}/10
+   타인의 인정에 대한 의존도
+   {self._get_dimension_explanation('관계적_독립성', dimensions['관계적_독립성'])}
 
 5️⃣ 암묵적 자존감: {dimensions['암묵적_자존감']}/10
-   (Conscious vs Unconscious Gap)
+   의식적 자존감 vs 무의식적 자존감의 일치도
+   {self._get_dimension_explanation('암묵적_자존감', dimensions['암묵적_자존감'])}
+
+📈 오각형 그래프 보기:
+첨부된 PDF에서 당신의 5차원 균형을 시각적으로 확인하세요!
+균형잡힌 오각형에 가까울수록 건강한 자존감입니다.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-🗓️ 당신만의 4주 성장 로드맵
+🗓️ 당신만의 맞춤형 4주 성장 로드맵
 ━━━━━━━━━━━━━━━━━━━━━━
 
-━━━ Week 1: 자기친절의 기초 ━━━
+당신의 점수 분석 결과, 다음 순서로 성장하는 것을 추천합니다:
 
-목표: 자기비판 → 자기친절
-
-📅 매일 실천:
-• 아침: "나는 오늘 최선을 다하고 있다" 3번 말하기
-• 저녁: 오늘 잘한 것 3가지 적기
-• 실수했을 때: "친구에게 하듯" 자신에게 말하기
-
-🎯 이번 주 미션:
-거울을 보고 자신에게 따뜻한 말 한마디 건네기
-(매일 아침, 7일 연속)
-
-━━━ Week 2: 완벽주의 내려놓기 ━━━
-
-목표: 완벽주의 → 건강한 노력
-
-📅 매일 실천:
-• "충분히 좋다" 연습: 80% 완성도도 OK
-• 실수 재해석: "이것에서 뭘 배울 수 있을까?"
-• Progress Journal: 과정에 집중하기
-
-━━━ Week 3: 공통 인간성 인식 ━━━
-
-목표: "나만 힘들다" → "우리 모두 힘들다"
-
-📅 매일 실천:
-• 타인의 어려움 이야기 읽기/듣기
-• "나만 그런 게 아니구나" 일기
-• 공감 연습: 누군가의 고민 들어주기
-
-━━━ Week 4: 안정적 자기가치 구축 ━━━
-
-목표: 조건부 자존감 → 무조건적 자기가치
-
-📅 매일 실천:
-• "나는 ___이기 때문이 아니라, 나이기 때문에 가치있다"
-• Core Values 명료화
-• 존재 명상: "있는 그대로의 나" 수용하기
+{self._format_personalized_roadmap(roadmap)}
 
 ━━━━━━━━━━━━━━━━━━━━━━
 📊 4주 후 재검사 초대
@@ -447,6 +458,11 @@ P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
 
 당신의 성장 곡선을 시각화해서
 "Before & After" 리포트를 보내드립니다.
+
+• 5차원 점수 변화
+• 오각형 그래프 비교
+• 성장률 분석
+• 다음 단계 제안
 
 [4주 후 재검사 링크]
 
@@ -476,12 +492,21 @@ P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
 
 P.S. 4주 후 당신의 변화 이야기를 듣고 싶습니다. 💚
 
+{format_reference_list()}
+
 ━━━━━━━━━━━━━━━━━━━━━━
 
 📎 첨부 파일:
 • {user_name}님_자존감분석보고서.pdf
 • 자기자비워크시트.pdf
 • 4주프로그램_체크리스트.pdf
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+본 분석은 자기 이해를 돕기 위한 과학적 도구이며, 
+의료적 진단을 대체하지 않습니다.
+
+© 2026 자존감 연구팀. All rights reserved.
 """
         return template
     
@@ -589,6 +614,70 @@ Stanford 대학의 연구에 따르면,
 당신의 안정된 자존감을
 누군가에게 나눠주세요.
 한 사람에게 진심 어린 칭찬을 해보세요."""
+    
+    def _get_dimension_explanation(self, dimension_name: str, score: float) -> str:
+        """차원별 점수 해석"""
+        explanations = {
+            '자존감_안정성': {
+                'low': '외부 평가(성적, 외모, 타인의 인정)에 자존감이 많이 흔들립니다. 안정적 자기가치 구축이 필요합니다.',
+                'medium': '때로는 흔들리지만, 기본적인 자기가치는 유지하고 있습니다. 조금 더 안정화가 필요합니다.',
+                'high': '외부 평가와 무관하게 자신의 가치를 인정합니다. 건강한 자존감의 모습입니다.'
+            },
+            '자기_자비': {
+                'low': '실수나 실패 시 자신을 가혹하게 비판하는 경향이 있습니다. 자기친절 연습이 도움이 됩니다.',
+                'medium': '때때로 자신에게 엄격하지만, 친절을 베풀 줄도 압니다. 자기자비를 더 연습해보세요.',
+                'high': '실수를 인간적 경험으로 받아들이며, 자신에게 친절합니다. 훌륭한 자기 돌봄입니다.'
+            },
+            '성장_마인드셋': {
+                'low': '능력이 고정되어 있다고 믿는 경향이 있습니다. 실패를 두려워할 수 있습니다.',
+                'medium': '성장 가능성을 믿지만, 때로는 고정관념에 갇힙니다. 더 유연해질 수 있습니다.',
+                'high': '노력과 학습을 통해 성장할 수 있다고 믿습니다. 도전을 기회로 봅니다.'
+            },
+            '관계적_독립성': {
+                'low': '타인의 인정과 승인에 자존감이 많이 의존합니다. 내적 기준 개발이 필요합니다.',
+                'medium': '타인의 의견을 고려하되, 자신의 판단도 존중합니다. 균형잡힌 모습입니다.',
+                'high': '자신의 가치를 스스로 정의합니다. 건강한 독립성을 보입니다.'
+            },
+            '암묵적_자존감': {
+                'low': '의식적 자존감과 무의식적 자존감 사이에 큰 간극이 있을 수 있습니다.',
+                'medium': '대체로 일치하지만, 때때로 불일치가 나타날 수 있습니다.',
+                'high': '의식적/무의식적 자존감이 잘 일치합니다. 진정성 있는 자존감입니다.'
+            }
+        }
+        
+        if score < 5:
+            level = 'low'
+        elif score < 7:
+            level = 'medium'
+        else:
+            level = 'high'
+        
+        return explanations.get(dimension_name, {}).get(level, '')
+    
+    def _format_personalized_roadmap(self, roadmap: List[Dict]) -> str:
+        """개인화된 로드맵 포맷팅"""
+        formatted = ""
+        
+        for week_plan in roadmap:
+            formatted += f"""
+━━━ Week {week_plan['week']}: {week_plan['focus_area']} (현재 {week_plan['score']}/10) ━━━
+
+🎯 목표: {week_plan['goal']}
+
+❓ 왜 이것부터?: {week_plan['why']}
+
+📅 매일 실천할 것:
+"""
+            for i, practice in enumerate(week_plan['practices'], 1):
+                formatted += f"   {i}. {practice}\n"
+            
+            formatted += f"""
+🏆 이번 주 미션:
+   {week_plan['mission']}
+
+"""
+        
+        return formatted
 
 
 # ==================== 4. 메인 시스템 ====================

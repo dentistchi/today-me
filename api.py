@@ -23,6 +23,7 @@ from response_style_corrector import ResponseStyleCorrector, CorrectionResult
 # 이메일 및 분석 모듈 임포트
 from email_scheduler import EmailScheduler, EmailConfig
 from self_esteem_system import SelfEsteemSystem
+import os
 
 
 # ==================== FastAPI 초기화 ====================
@@ -52,6 +53,10 @@ email_scheduler = EmailScheduler(email_config)
 
 # 자존감 분석 시스템 초기화
 esteem_system = SelfEsteemSystem()
+
+# PDF 출력 디렉토리 설정
+PDF_OUTPUT_DIR = "/home/user/webapp/pdf_reports"
+os.makedirs(PDF_OUTPUT_DIR, exist_ok=True)
 
 
 # ==================== 데이터 모델 ====================
@@ -178,12 +183,46 @@ async def assess_responses(request: AssessmentRequest):
             response_times=request.response_times
         )
         
+        # Step 3.5: PDF 보고서 생성
+        try:
+            from pdf_generator_v2 import EnhancedPDFGenerator
+            
+            # PDF 파일명 생성
+            user_name = request.user_id.split('@')[0] if '@' in request.user_id else request.user_id
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            pdf_filename = f"{user_name}_자존감분석_{timestamp}.pdf"
+            pdf_path = os.path.join(PDF_OUTPUT_DIR, pdf_filename)
+            
+            # PDF 생성기 초기화
+            pdf_gen = EnhancedPDFGenerator()
+            
+            # 보고서 데이터 준비
+            report_data = {
+                'user_name': user_name,
+                'user_email': request.user_id,
+                'profile_type': analysis_results['profile']['esteem_type'],
+                'scores': analysis_results['profile']['scores'],
+                'dimensions': analysis_results['profile']['dimensions'],
+                'strengths': analysis_results.get('strengths', []),
+                'patterns': [],  # 패턴 분석은 선택사항
+                'retest_link': 'https://yoursite.com/retest'
+            }
+            
+            # PDF 생성
+            pdf_gen.generate_report(report_data, pdf_path)
+            print(f"✅ PDF 생성 완료: {pdf_path}")
+            
+        except Exception as e:
+            print(f"❌ PDF 생성 실패: {e}")
+            pdf_path = None
+        
         # Step 4: 3단계 이메일 예약 발송
         email_schedule = email_scheduler.schedule_three_stage_emails(
             user_email=request.user_id,
             user_name=analysis_results['profile']['esteem_type'],
             emails=analysis_results['emails'],
-            pdf_path=None  # PDF는 별도 생성 필요
+            pdf_path=pdf_path,  # 생성된 PDF 경로
+            profile=analysis_results['profile']  # 개발자 알림용 프로파일 정보
         )
         
         # 경고 메시지 생성
