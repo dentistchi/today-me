@@ -20,6 +20,10 @@ import json
 from careless_response_detector import CarelessResponseDetector, QualityCheckResult
 from response_style_corrector import ResponseStyleCorrector, CorrectionResult
 
+# 이메일 및 분석 모듈 임포트
+from email_scheduler import EmailScheduler, EmailConfig
+from self_esteem_system import SelfEsteemSystem
+
 
 # ==================== FastAPI 초기화 ====================
 
@@ -41,6 +45,13 @@ app.add_middleware(
 # 전역 초기화
 detector = CarelessResponseDetector()
 corrector = ResponseStyleCorrector()
+
+# 이메일 스케줄러 초기화
+email_config = EmailConfig()
+email_scheduler = EmailScheduler(email_config)
+
+# 자존감 분석 시스템 초기화
+esteem_system = SelfEsteemSystem()
 
 
 # ==================== 데이터 모델 ====================
@@ -121,11 +132,13 @@ async def assess_responses(request: AssessmentRequest):
     Process:
     1. 데이터 품질 검증 (부주의 응답 감지)
     2. 응답 스타일 보정
-    3. 기존 분석 로직 실행
+    3. 자존감 분석 및 이메일 생성
+    4. 3단계 이메일 예약 발송
     
     Returns:
         - status: "success", "invalid", "warning"
         - 품질 정보 + 보정된 응답
+        - 이메일 스케줄 정보
     """
     try:
         # Step 1: 데이터 품질 검증
@@ -157,17 +170,29 @@ async def assess_responses(request: AssessmentRequest):
             reverse_items=request.reverse_items
         )
         
-        # Step 3: 이후 기존 분석 로직 실행
-        # (실제 프로덕션에서는 self_esteem_system.py 호출)
-        # analysis_result = analyze_self_esteem(correction_result.corrected_responses)
+        # Step 3: 자존감 분석 및 이메일 생성
+        analysis_results = esteem_system.process_test_results(
+            user_name=request.user_id.split('@')[0] if '@' in request.user_id else request.user_id,
+            user_email=request.user_id,
+            responses=correction_result.corrected_responses,
+            response_times=request.response_times
+        )
+        
+        # Step 4: 3단계 이메일 예약 발송
+        email_schedule = email_scheduler.schedule_three_stage_emails(
+            user_email=request.user_id,
+            user_name=analysis_results['profile']['esteem_type'],
+            emails=analysis_results['emails'],
+            pdf_path=None  # PDF는 별도 생성 필요
+        )
         
         # 경고 메시지 생성
         status = "success"
-        message = "평가가 성공적으로 완료되었습니다."
+        message = "평가가 성공적으로 완료되었습니다. 이메일을 확인해주세요!"
         
         if quality_result.recommendation == "warning":
             status = "warning"
-            message = "평가가 완료되었지만 응답 품질에 약간의 문제가 있습니다."
+            message = "평가가 완료되었지만 응답 품질에 약간의 문제가 있습니다. 이메일을 확인해주세요."
         
         return AssessmentResponse(
             user_id=request.user_id,
@@ -182,7 +207,8 @@ async def assess_responses(request: AssessmentRequest):
             corrected_responses=correction_result.corrected_responses,
             style_corrections={
                 "corrections_applied": correction_result.corrections_applied,
-                "style_scores": correction_result.style_scores
+                "style_scores": correction_result.style_scores,
+                "email_schedule": email_schedule  # 이메일 스케줄 정보 추가
             },
             timestamp=datetime.now().isoformat()
         )
@@ -287,6 +313,38 @@ async def get_ab_test_stats():
             "completion_rate": "+15%"
         }
     }
+
+
+@app.get("/api/scheduled-emails")
+async def get_scheduled_emails():
+    """
+    예약된 이메일 목록 조회
+    (관리자용)
+    """
+    jobs = email_scheduler.get_scheduled_jobs()
+    return {
+        "total_scheduled": len(jobs),
+        "jobs": jobs
+    }
+
+
+@app.post("/api/cancel-email/{job_id}")
+async def cancel_scheduled_email(job_id: str):
+    """
+    예약된 이메일 취소
+    (관리자용)
+    """
+    result = email_scheduler.cancel_job(job_id)
+    if result:
+        return {"status": "success", "message": f"Job {job_id} cancelled"}
+    else:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """앱 종료시 스케줄러 정리"""
+    email_scheduler.shutdown()
 
 
 # ==================== 헬퍼 함수 ====================

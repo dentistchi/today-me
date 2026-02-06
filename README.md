@@ -1,8 +1,13 @@
-# Phase 1 구현: 부주의 응답 감지 + 응답 스타일 보정
+# Phase 1 구현: 부주의 응답 감지 + 응답 스타일 보정 + 이메일 발송
 
 **목표**: 2주 안에 정확도 +15% 달성  
 **비용**: 0원  
 **개발 기간**: 2주
+
+**NEW**: 3단계 이메일 자동 발송 시스템 추가
+- 즉시: 테스트 완료 알림
+- 2시간 후: 중간 분석 보고서
+- 24시간 후: 상세 분석 보고서 (PDF 첨부)
 
 ---
 
@@ -12,6 +17,8 @@
 - `careless_response_detector.py` - 부주의 응답 감지기
 - `response_style_corrector.py` - 응답 스타일 보정기
 - `api.py` - FastAPI REST API
+- `email_scheduler.py` - 이메일 예약 발송 시스템 ⭐NEW
+- `self_esteem_system.py` - 자존감 분석 및 이메일 템플릿 생성
 
 ### 2. 테스트
 - `tests/test_detector.py` - 감지기 단위 테스트
@@ -36,10 +43,15 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # 2. 의존성 설치
 pip install -r requirements.txt
 
-# 3. 테스트 실행
+# 3. 환경변수 설정 (이메일 발송용)
+cp .env.example .env
+# .env 파일을 열어서 SMTP 설정을 입력하세요
+# 테스트 모드로 시작하려면 ENABLE_EMAIL=false로 설정
+
+# 4. 테스트 실행
 pytest tests/
 
-# 4. API 서버 시작
+# 5. API 서버 시작
 python api.py
 ```
 
@@ -136,7 +148,7 @@ Content-Type: application/json
 {
   "user_id": "user123",
   "status": "success",
-  "message": "평가가 성공적으로 완료되었습니다.",
+  "message": "평가가 성공적으로 완료되었습니다. 이메일을 확인해주세요!",
   "data_quality": {
     "quality_score": 0.85,
     "flags": [],
@@ -149,6 +161,30 @@ Content-Type: application/json
       "extreme_responding": 0.24,
       "midpoint_responding": 0.56,
       "acquiescence": 0.15
+    },
+    "email_schedule": {
+      "user_email": "user123@example.com",
+      "scheduled_at": "2026-02-06T10:30:00",
+      "jobs": {
+        "basic": {
+          "status": "sent",
+          "sent_at": "2026-02-06T10:30:00",
+          "scheduled_for": "2026-02-06T10:30:00"
+        },
+        "intermediate": {
+          "status": "scheduled",
+          "job_id": "email_intermediate_user123_1234567890",
+          "scheduled_for": "2026-02-06T12:30:00",
+          "delay_minutes": 120
+        },
+        "detailed": {
+          "status": "scheduled",
+          "job_id": "email_detailed_user123_1234567890",
+          "scheduled_for": "2026-02-07T10:30:00",
+          "delay_minutes": 1440,
+          "has_attachment": true
+        }
+      }
     }
   }
 }
@@ -199,6 +235,38 @@ GET /api/ab-stats
     "quality_score": "+18%",
     "flagged_rate": "-60%"
   }
+}
+```
+
+### 엔드포인트 4: 예약된 이메일 조회 (관리자용) ⭐NEW
+
+```bash
+GET /api/scheduled-emails
+
+# 응답
+{
+  "total_scheduled": 10,
+  "jobs": [
+    {
+      "id": "email_intermediate_user123_1234567890",
+      "name": "Intermediate email to user123@example.com",
+      "next_run_time": "2026-02-06T12:30:00",
+      "trigger": "date[2026-02-06 12:30:00 KST]"
+    },
+    ...
+  ]
+}
+```
+
+### 엔드포인트 5: 이메일 취소 (관리자용) ⭐NEW
+
+```bash
+POST /api/cancel-email/{job_id}
+
+# 응답
+{
+  "status": "success",
+  "message": "Job email_intermediate_user123_1234567890 cancelled"
 }
 ```
 
