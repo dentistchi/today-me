@@ -38,6 +38,9 @@ class EmailConfig:
         self.FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@selfesteem.com")
         self.FROM_NAME = os.getenv("FROM_NAME", "자존감 연구팀")
         
+        # 개발자/관리자 이메일 (알림 수신용)
+        self.ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
+        
         # 이메일 전송 여부 (테스트 모드)
         self.ENABLE_EMAIL = os.getenv("ENABLE_EMAIL", "false").lower() == "true"
     
@@ -154,7 +157,8 @@ class EmailScheduler:
                                    user_email: str,
                                    user_name: str,
                                    emails: Dict,
-                                   pdf_path: Optional[str] = None) -> Dict:
+                                   pdf_path: Optional[str] = None,
+                                   profile: Dict = None) -> Dict:
         """
         3단계 이메일 예약 발송
         
@@ -167,6 +171,7 @@ class EmailScheduler:
                 'detailed': {'subject': '', 'body': '', 'send_delay_minutes': 1440}
             }
             pdf_path: PDF 파일 경로 (detailed 이메일에 첨부)
+            profile: 사용자 프로파일 정보 (개발자 알림용)
         
         Returns:
             스케줄 정보
@@ -251,6 +256,17 @@ class EmailScheduler:
             }
             logger.info(f"📅 [Stage 3/3] Detailed email scheduled for {send_time}")
         
+        # 개발자에게 알림 이메일 보내기 (24시간 후 보낼 내용 미리보기)
+        if self.config.ADMIN_EMAIL and 'detailed' in emails:
+            self._send_admin_notification(
+                user_email=user_email,
+                user_name=user_name,
+                detailed_email=emails['detailed'],
+                profile=profile,
+                scheduled_time=send_time,
+                pdf_path=pdf_path
+            )
+        
         return {
             'user_email': user_email,
             'user_name': user_name,
@@ -295,6 +311,189 @@ class EmailScheduler:
         # 연속된 줄바꿈 제거
         text = re.sub(r'\n\s*\n', '\n\n', text)
         return text.strip()
+    
+    def _send_admin_notification(self,
+                                user_email: str,
+                                user_name: str,
+                                detailed_email: Dict,
+                                profile: Dict,
+                                scheduled_time: datetime,
+                                pdf_path: Optional[str] = None):
+        """
+        개발자에게 알림 이메일 보내기
+        사용자가 받을 24시간 후 이메일 내용을 미리 확인
+        """
+        if not self.config.ADMIN_EMAIL:
+            logger.info("⚠️  ADMIN_EMAIL not configured, skipping admin notification")
+            return
+        
+        # 프로파일 정보 추출
+        esteem_type = profile.get('esteem_type', 'Unknown') if profile else 'Unknown'
+        dimensions = profile.get('dimensions', {}) if profile else {}
+        rosenberg_score = profile.get('scores', {}).get('rosenberg', 0) if profile else 0
+        
+        # 개발자용 알림 이메일 생성
+        admin_subject = f"[알림] 새 사용자 리포트 생성: {user_email} ({esteem_type})"
+        
+        admin_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+        .section {{ background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #667eea; }}
+        .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }}
+        .info-item {{ padding: 10px; background: white; border-radius: 4px; }}
+        .label {{ font-weight: bold; color: #667eea; }}
+        .preview {{ background: #fff; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+        .warning {{ background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0;">📊 새 사용자 리포트 생성</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">24시간 후 발송될 이메일 미리보기</p>
+        </div>
+        
+        <div class="section">
+            <h2>👤 사용자 정보</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">이메일</div>
+                    <div>{user_email}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">이름</div>
+                    <div>{user_name}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">프로파일 유형</div>
+                    <div>{esteem_type}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Rosenberg 점수</div>
+                    <div>{rosenberg_score}/40</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📈 5차원 점수</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">자존감 안정성</div>
+                    <div>{dimensions.get('자존감_안정성', 'N/A')}/10</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">자기자비</div>
+                    <div>{dimensions.get('자기_자비', 'N/A')}/10</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">성장 마인드셋</div>
+                    <div>{dimensions.get('성장_마인드셋', 'N/A')}/10</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">관계적 독립성</div>
+                    <div>{dimensions.get('관계적_독립성', 'N/A')}/10</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">암묵적 자존감</div>
+                    <div>{dimensions.get('암묵적_자존감', 'N/A')}/10</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>⏰ 스케줄 정보</h2>
+            <p><strong>발송 예정 시간:</strong> {scheduled_time.strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p><strong>PDF 첨부:</strong> {'✅ Yes' if pdf_path and os.path.exists(pdf_path) else '❌ No'}</p>
+            {f'<p><strong>PDF 경로:</strong> {pdf_path}</p>' if pdf_path else ''}
+        </div>
+        
+        <div class="warning">
+            <h3 style="margin-top: 0;">⚠️ 확인 필요 사항</h3>
+            <ul>
+                <li>이메일 내용이 올바른지 확인하세요</li>
+                <li>PDF가 정상적으로 생성되었는지 확인하세요</li>
+                <li>개인화된 로드맵이 적절한지 검토하세요</li>
+            </ul>
+        </div>
+        
+        <div class="preview">
+            <h2>📧 사용자가 받을 이메일 미리보기</h2>
+            <hr>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <h3>제목: {detailed_email['subject']}</h3>
+                <div style="white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.8;">
+{detailed_email['body'][:2000]}...
+
+[전체 내용은 첨부파일 또는 로그에서 확인]
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📎 참고</h3>
+            <p>이 이메일은 자동으로 생성되었습니다.</p>
+            <p>문제가 있다면 즉시 스케줄러에서 해당 작업을 취소하세요:</p>
+            <code>curl -X POST http://localhost:8000/api/cancel-email/{{job_id}}</code>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        # 텍스트 버전
+        admin_text = f"""
+새 사용자 리포트 생성 알림
+==========================
+
+사용자 정보:
+- 이메일: {user_email}
+- 이름: {user_name}
+- 프로파일: {esteem_type}
+- Rosenberg 점수: {rosenberg_score}/40
+
+5차원 점수:
+- 자존감 안정성: {dimensions.get('자존감_안정성', 'N/A')}/10
+- 자기자비: {dimensions.get('자기_자비', 'N/A')}/10
+- 성장 마인드셋: {dimensions.get('성장_마인드셋', 'N/A')}/10
+- 관계적 독립성: {dimensions.get('관계적_독립성', 'N/A')}/10
+- 암묵적 자존감: {dimensions.get('암묵적_자존감', 'N/A')}/10
+
+발송 예정: {scheduled_time.strftime('%Y-%m-%d %H:%M:%S')}
+PDF 첨부: {'Yes' if pdf_path and os.path.exists(pdf_path) else 'No'}
+
+사용자가 받을 이메일 미리보기:
+{detailed_email['body'][:500]}...
+"""
+        
+        # 첨부파일 (PDF가 있으면 개발자에게도 보내기)
+        attachments = []
+        if pdf_path and os.path.exists(pdf_path):
+            attachments.append(pdf_path)
+        
+        # 이메일 발송
+        try:
+            result = self.send_email(
+                to_email=self.config.ADMIN_EMAIL,
+                subject=admin_subject,
+                body_html=admin_body,
+                body_text=admin_text,
+                attachments=attachments
+            )
+            
+            if result:
+                logger.info(f"✅ Admin notification sent to {self.config.ADMIN_EMAIL}")
+            else:
+                logger.warning(f"⚠️  Admin notification failed")
+                
+        except Exception as e:
+            logger.error(f"❌ Admin notification error: {e}")
 
 
 # ==================== 사용 예시 ====================

@@ -183,7 +183,8 @@ async def assess_responses(request: AssessmentRequest):
             user_email=request.user_id,
             user_name=analysis_results['profile']['esteem_type'],
             emails=analysis_results['emails'],
-            pdf_path=None  # PDF는 별도 생성 필요
+            pdf_path=None,  # PDF는 별도 생성 필요
+            profile=analysis_results['profile']  # 개발자 알림용 프로파일 정보
         )
         
         # 경고 메시지 생성
