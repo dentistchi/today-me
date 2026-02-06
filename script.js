@@ -1,3 +1,5 @@
+'use strict';
+
 // ========== 질문 데이터베이스 ==========
 const questionDatabase = {
     // Part 1: 핵심 자존감 (RSES Core) - 가중치 30%
@@ -94,6 +96,8 @@ const questionDatabase = {
 // ========== 전역 변수 ==========
 let currentQuestionIndex = 0;
 let answers = [];
+let responseTimes = [];
+let questionStartTime = 0;
 let allQuestions = [];
 let scores = {};
 
@@ -110,6 +114,7 @@ function init() {
     
     // 답변 배열 초기화
     answers = Array(50).fill(0);
+    responseTimes = Array(50).fill(0);
 }
 
 // ========== 테스트 시작 ==========
@@ -157,7 +162,8 @@ function displayQuestion() {
     
     // 이전 답변이 있으면 표시
     if (answers[currentQuestionIndex] > 0) {
-        const selectedBtn = document.querySelector(`[data-value="${answers[currentQuestionIndex]}"]`);
+        const container = document.querySelector('.answers-container');
+        const selectedBtn = container.querySelector(`[data-value="${answers[currentQuestionIndex]}"]`);
         if (selectedBtn) selectedBtn.classList.add('selected');
     }
     
@@ -168,17 +174,26 @@ function displayQuestion() {
     } else {
         backBtn.style.display = 'block';
     }
+
+    questionStartTime = Date.now();
 }
 
 // ========== 답변 선택 ==========
 function selectAnswer(value) {
     answers[currentQuestionIndex] = value;
     
+    // 응답 시간 기록
+    const responseTime = (Date.now() - questionStartTime) / 1000; // 초 단위
+    responseTimes[currentQuestionIndex] = responseTime;
+
     // 선택 표시
     document.querySelectorAll('.answer-option').forEach(btn => {
         btn.classList.remove('selected');
     });
-    event.target.closest('.answer-option').classList.add('selected');
+    
+    // HTML onclick에서 발생한 이벤트 처리 (안전한 접근)
+    const e = window.event;
+    if (e && e.target) e.target.closest('.answer-option').classList.add('selected');
     
     // 0.6초 후 다음 질문으로
     setTimeout(() => {
@@ -297,9 +312,19 @@ function displayPreviewResults() {
     animateScore('preview-total-score', scores.total, 2000);
     animateCircle(scores.total / 100);
     
+    // 점수에 따른 색상 테마 업데이트
+    updateScoreVisuals(scores.total);
+    
     // 점수 해석
     const interpretation = getScoreInterpretation(scores.total);
     document.getElementById('preview-interpretation').textContent = interpretation;
+    
+    // 프로파일 유형 정보 업데이트 (아이콘, 제목, 설명)
+    if (scores.profile) {
+        document.querySelector('.result-icon').textContent = scores.profile.emoji;
+        document.querySelector('.result-title').textContent = `당신의 유형: ${scores.profile.name}`;
+        document.querySelector('.result-subtitle').textContent = scores.profile.description;
+    }
     
     // 세부 점수 애니메이션
     setTimeout(() => {
@@ -318,6 +343,36 @@ function displayPreviewResults() {
     
     // 폼에 데이터 설정
     setFormData();
+}
+
+// ========== 점수별 시각화 업데이트 ==========
+function updateScoreVisuals(score) {
+    const gradient = document.getElementById('gradient');
+    const stops = gradient.getElementsByTagName('stop');
+    const scoreNumber = document.getElementById('preview-total-score');
+    
+    let colorStart, colorEnd;
+
+    if (score >= 70) {
+        // 높음: 초록/청록 계열 (건강함)
+        colorStart = '#48bb78'; // Green
+        colorEnd = '#38a169';   // Dark Green
+    } else if (score >= 40) {
+        // 중간: 주황/노랑 계열 (주의)
+        colorStart = '#f6ad55'; // Orange
+        colorEnd = '#ed8936';   // Dark Orange
+    } else {
+        // 낮음: 빨강/분홍 계열 (위험)
+        colorStart = '#fc8181'; // Red
+        colorEnd = '#e53e3e';   // Dark Red
+    }
+
+    // SVG 그라데이션 업데이트
+    stops[0].style.stopColor = colorStart;
+    stops[1].style.stopColor = colorEnd;
+    
+    // 점수 텍스트 그라데이션 업데이트
+    scoreNumber.style.backgroundImage = `linear-gradient(135deg, ${colorStart}, ${colorEnd})`;
 }
 
 function animateScore(elementId, targetScore, duration) {
@@ -380,26 +435,45 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Formspree로 전송
-            const formData = new FormData(form);
+            // 이메일 유효성 검사
+            const emailInput = form.querySelector('input[name="email"]');
+            const emailValue = emailInput.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             
+            if (!emailValue || !emailRegex.test(emailValue)) {
+                alert('올바른 이메일 형식을 입력해주세요.');
+                emailInput.focus();
+                return;
+            }
+
+            // 버튼 로딩 상태 표시
+            const submitBtn = form.querySelector('.btn-submit');
+            const originalBtnText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = '분석 보고서 생성 중...';
+            
+            // Google Apps Script URL 사용 (HTML form의 action 속성)
             fetch(form.action, {
                 method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
+                body: new FormData(form),
             })
-            .then(response => {
-                if (response.ok) {
+            .then(response => response.json())
+            .then(data => {
+                // Google Apps Script 응답 처리 ({"result":"success"})
+                if (data.result === 'success') {
                     showPage('thank-you-page');
                 } else {
-                    alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+                    alert('오류가 발생했습니다. 다시 시도해주세요.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+                alert('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            })
+            .finally(() => {
+                // 버튼 상태 복구
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalBtnText;
             });
         });
     }
