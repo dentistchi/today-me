@@ -1,0 +1,63 @@
+{
+  "user_email": "critic@example.com",
+  "user_name": "자기비판형",
+  "start_date": "2026-02-10T09:00:00",
+  "total_emails": 6,
+  "daily_guide_pdf": "outputs/daily_practice_guide_자기비판형.pdf",
+  "emails": [
+    {
+      "type": "diagnosis_complete",
+      "send_at": "2026-02-10T09:00:00",
+      "to": "critic@example.com",
+      "subject": "[자존감 진단 완료] 자기비판형님의 자기자비 여정이 시작됩니다 🌱",
+      "body_html": "\n        <html>\n        <body style=\"font-family: sans-serif; line-height: 1.6; color: #333;\">\n            <h2 style=\"color: #2C3E50;\">안녕하세요, 자기비판형님!</h2>\n            \n            <p>자존감 진단이 완료되었습니다. 용기 내어 자신을 돌아본 당신을 응원합니다. 🎉</p>\n            \n            <h3 style=\"color: #3498DB;\">📊 첨부 파일</h3>\n            <ul>\n                <li><strong>자존감 분석 보고서 PDF</strong> - 당신의 현재 상태와 숨겨진 강점</li>\n                <li><strong>28일 매일 실천 가이드 PDF</strong> - 하루하루 변화를 만드는 구체적 실천법</li>\n            </ul>\n            \n            <h3 style=\"color: #3498DB;\">🚀 다음 단계</h3>\n            <ol>\n                <li>첨부된 <strong>분석 보고서</strong>를 먼저 읽어주세요 (10-15분)</li>\n                <li><strong>28일 가이드</strong>를 다운로드하여 보관하세요</li>\n                <li>오늘부터 Day 1을 시작하세요!</li>\n            </ol>\n            \n            <div style=\"background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;\">\n                <h4 style=\"color: #F39C12; margin-top: 0;\">💡 28일 여정 안내</h4>\n                <p>\n                    <strong>Week 1:</strong> 자기자비 기초 (자기비판 알아차리기)<br/>\n                    <strong>Week 2:</strong> 완벽주의 내려놓기<br/>\n                    <strong>Week 3:</strong> 공통 인간성 인식 (나만이 아니야)<br/>\n                    <strong>Week 4:</strong> 안정적 자기가치 확립\n                </p>\n            </div>\n            \n            <p>매주 월요일마다 그 주의 가이드를 리마인드 이메일로 보내드립니다.</p>\n            \n            <p>완벽하지 않아도 괜찮습니다. 하루를 놓쳐도 다시 시작하면 됩니다.</p>\n            \n            <p><strong>중요한 것은 방향입니다. 당신은 이미 첫 걸음을 내디뎠습니다.</strong></p>\n            \n            <p style=\"margin-top: 30px;\">\n                응원합니다,<br/>\n                자기자비 여정 팀 💚\n            </p>\n        </body>\n        </html>\n        ",
+      "attachments": [
+        {
+          "type": "pdf",
+          "path": "outputs/daily_practice_guide_자기비판형.pdf",
+          "filename": "자기비판형_28일실천가이드.pdf"
+        }
+      ]
+    },
+    {
+      "type": "week_1_start",
+      "send_at": "2026-02-10T09:00:00",
+      "to": "critic@example.com",
+      "subject": "[Week 1 시작] 자기비판형님, 자기자비 기초 - 자기비판 알아차리기 🌟",
+      "body_html": "\n        <html>\n        <body style=\"font-family: sans-serif; line-height: 1.6; color: #333;\">\n            <h2 style=\"color: #2C3E50;\">Week 1에 오신 것을 환영합니다, 자기비판형님!</h2>\n            \n            <div style=\"background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;\">\n                <h3 style=\"color: #27AE60; margin-top: 0;\">이번 주 테마: 자기자비 기초 - 자기비판 알아차리기</h3>\n            </div>\n            \n            <h3 style=\"color: #3498DB;\">📅 Day 1: 🔍 자기비판 알아차리기 시작</h3>\n            \n            <p><strong>🌅 오늘의 아침 의식:</strong></p>\n            <p style=\"background-color: #FEF5E7; padding: 10px; border-radius: 5px; font-style: italic;\">\n                \"오늘 하루 동안 나는 나 자신에게 어떻게 말하는지 관찰할 것입니다.\"\n            </p>\n            \n            <p><strong>📖 오늘의 핵심 실천:</strong></p>\n            <p>자기비판 일기 \n               (5분)</p>\n            \n            <p><strong>✅ 오늘의 작은 승리:</strong></p>\n            <p>자기비판을 1개 이상 알아차렸다면 → 오늘의 목표 달성! ✅</p>\n            \n            <div style=\"background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n                <p style=\"margin: 0;\"><strong>💡 Tip:</strong> 28일 가이드 PDF를 참고하여 오늘의 실천을 확인하세요!</p>\n            </div>\n            \n            <p>완벽하지 않아도 괜찮습니다. 오늘 하루만 집중하세요.</p>\n            \n            <p style=\"margin-top: 30px;\">\n                당신을 응원합니다,<br/>\n                자기자비 여정 팀 💚\n            </p>\n        </body>\n        </html>\n        ",
+      "attachments": []
+    },
+    {
+      "type": "week_2_start",
+      "send_at": "2026-02-17T09:00:00",
+      "to": "critic@example.com",
+      "subject": "[Week 2 시작] 자기비판형님, 완벽주의 내려놓기 - 80%의 용기 🌟",
+      "body_html": "\n        <html>\n        <body style=\"font-family: sans-serif; line-height: 1.6; color: #333;\">\n            <h2 style=\"color: #2C3E50;\">Week 2에 오신 것을 환영합니다, 자기비판형님!</h2>\n            \n            <div style=\"background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;\">\n                <h3 style=\"color: #27AE60; margin-top: 0;\">이번 주 테마: 완벽주의 내려놓기 - 80%의 용기</h3>\n            </div>\n            \n            <h3 style=\"color: #3498DB;\">📅 Day 8: 🎯 80% 원칙 이해하기</h3>\n            \n            <p><strong>🌅 오늘의 아침 의식:</strong></p>\n            <p style=\"background-color: #FEF5E7; padding: 10px; border-radius: 5px; font-style: italic;\">\n                \"완벽하지 않아도 충분하다.\"\n            </p>\n            \n            <p><strong>📖 오늘의 핵심 실천:</strong></p>\n            <p>80% vs 100% 비교 실험 \n               (10분 (이론) + 실시간 적용)</p>\n            \n            <p><strong>✅ 오늘의 작은 승리:</strong></p>\n            <p>80% 완성하고 제출/멈춤을 실행했다면 → 성공! ✅</p>\n            \n            <div style=\"background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n                <p style=\"margin: 0;\"><strong>💡 Tip:</strong> 28일 가이드 PDF를 참고하여 오늘의 실천을 확인하세요!</p>\n            </div>\n            \n            <p>완벽하지 않아도 괜찮습니다. 오늘 하루만 집중하세요.</p>\n            \n            <p style=\"margin-top: 30px;\">\n                당신을 응원합니다,<br/>\n                자기자비 여정 팀 💚\n            </p>\n        </body>\n        </html>\n        ",
+      "attachments": []
+    },
+    {
+      "type": "week_3_start",
+      "send_at": "2026-02-24T09:00:00",
+      "to": "critic@example.com",
+      "subject": "[Week 3 시작] 자기비판형님, 공통 인간성 인식 - 나만이 아니야 🌟",
+      "body_html": "\n        <html>\n        <body style=\"font-family: sans-serif; line-height: 1.6; color: #333;\">\n            <h2 style=\"color: #2C3E50;\">Week 3에 오신 것을 환영합니다, 자기비판형님!</h2>\n            \n            <div style=\"background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;\">\n                <h3 style=\"color: #27AE60; margin-top: 0;\">이번 주 테마: 공통 인간성 인식 - 나만이 아니야</h3>\n            </div>\n            \n            <h3 style=\"color: #3498DB;\">📅 Day 15: 🌍 당신만 힘든 게 아닙니다</h3>\n            \n            <p><strong>🌅 오늘의 아침 의식:</strong></p>\n            <p style=\"background-color: #FEF5E7; padding: 10px; border-radius: 5px; font-style: italic;\">\n                \"모두가 자기만의 전쟁을 치르고 있습니다.\"\n            </p>\n            \n            <p><strong>📖 오늘의 핵심 실천:</strong></p>\n            <p>공통 인간성 일기 \n               (10분)</p>\n            \n            <p><strong>✅ 오늘의 작은 승리:</strong></p>\n            <p>타인의 고통에 공감하고 연결감을 느꼈다면 → 성공! ✅</p>\n            \n            <div style=\"background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n                <p style=\"margin: 0;\"><strong>💡 Tip:</strong> 28일 가이드 PDF를 참고하여 오늘의 실천을 확인하세요!</p>\n            </div>\n            \n            <p>완벽하지 않아도 괜찮습니다. 오늘 하루만 집중하세요.</p>\n            \n            <p style=\"margin-top: 30px;\">\n                당신을 응원합니다,<br/>\n                자기자비 여정 팀 💚\n            </p>\n        </body>\n        </html>\n        ",
+      "attachments": []
+    },
+    {
+      "type": "week_4_start",
+      "send_at": "2026-03-03T09:00:00",
+      "to": "critic@example.com",
+      "subject": "[Week 4 시작] 자기비판형님, 안정적 자기가치 - 존재 그 자체로 🌟",
+      "body_html": "\n        <html>\n        <body style=\"font-family: sans-serif; line-height: 1.6; color: #333;\">\n            <h2 style=\"color: #2C3E50;\">Week 4에 오신 것을 환영합니다, 자기비판형님!</h2>\n            \n            <div style=\"background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;\">\n                <h3 style=\"color: #27AE60; margin-top: 0;\">이번 주 테마: 안정적 자기가치 - 존재 그 자체로</h3>\n            </div>\n            \n            <h3 style=\"color: #3498DB;\">📅 Day 22: 💎 존재 자체의 가치</h3>\n            \n            <p><strong>🌅 오늘의 아침 의식:</strong></p>\n            <p style=\"background-color: #FEF5E7; padding: 10px; border-radius: 5px; font-style: italic;\">\n                \"나는 무엇을 해도, 하지 않아도 가치 있습니다.\"\n            </p>\n            \n            <p><strong>📖 오늘의 핵심 실천:</strong></p>\n            <p>존재 가치 명상 \n               (10분)</p>\n            \n            <p><strong>✅ 오늘의 작은 승리:</strong></p>\n            <p>존재 가치 명상을 10분 완료했다면 → 성공! ✅</p>\n            \n            <div style=\"background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;\">\n                <p style=\"margin: 0;\"><strong>💡 Tip:</strong> 28일 가이드 PDF를 참고하여 오늘의 실천을 확인하세요!</p>\n            </div>\n            \n            <p>완벽하지 않아도 괜찮습니다. 오늘 하루만 집중하세요.</p>\n            \n            <p style=\"margin-top: 30px;\">\n                당신을 응원합니다,<br/>\n                자기자비 여정 팀 💚\n            </p>\n        </body>\n        </html>\n        ",
+      "attachments": []
+    },
+    {
+      "type": "completion_and_retest",
+      "send_at": "2026-03-09T09:00:00",
+      "to": "critic@example.com",
+      "subject": "[28일 완주!] 자기비판형님, 축하합니다! 🎉🏆",
+      "body_html": "\n        <html>\n        <body style=\"font-family: sans-serif; line-height: 1.6; color: #333;\">\n            <h1 style=\"color: #8E44AD; text-align: center;\">🎊🎊🎊 28일 완주! 축하합니다! 🎊🎊🎊</h1>\n            \n            <h2 style=\"color: #2C3E50;\">정말 대단합니다, 자기비판형님!</h2>\n            \n            <p>28일 동안 매일 자기자비를 실천한 당신을 진심으로 축하합니다.</p>\n            \n            <div style=\"background-color: #E8F8F5; padding: 20px; border-radius: 10px; margin: 20px 0;\">\n                <h3 style=\"color: #27AE60; margin-top: 0;\">✅ 당신이 이룬 것들</h3>\n                <ul>\n                    <li>자기비판을 알아차렸습니다</li>\n                    <li>완벽주의를 내려놓기 시작했습니다</li>\n                    <li>혼자가 아님을 깨달았습니다</li>\n                    <li>존재 자체로 가치 있음을 배웠습니다</li>\n                    <li>나만의 자기자비 방법을 찾았습니다</li>\n                </ul>\n            </div>\n            \n            <h3 style=\"color: #3498DB;\">🔍 이제 재검사를 통해 변화를 확인하세요</h3>\n            \n            <p>28일 전과 비교해서 무엇이 달라졌는지 확인해보세요.<br/>\n            숫자의 변화뿐 아니라, 당신 안의 변화를 느껴보세요.</p>\n            \n            <div style=\"text-align: center; margin: 30px 0;\">\n                <a href=\"https://example.com/retest?user=자기비판형\" style=\"display: inline-block; background-color: #2874A6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 18px; font-weight: bold;\">\n                    🔗 재검사 시작하기\n                </a>\n            </div>\n            \n            <div style=\"background-color: #FEF5E7; padding: 20px; border-left: 4px solid #F39C12; margin: 20px 0;\">\n                <h4 style=\"color: #F39C12; margin-top: 0;\">💡 다음 단계</h4>\n                <ol>\n                    <li>재검사 완료하기</li>\n                    <li>Day 25에서 만든 '매일 루틴' 지속하기</li>\n                    <li>Day 26 미래 편지 6개월 후 열어보기</li>\n                    <li>Day 27 선언문 매일 보기</li>\n                    <li>필요할 때마다 28일 가이드 다시 읽기</li>\n                </ol>\n            </div>\n            \n            <h3 style=\"color: #2C3E50;\">💌 마지막 메시지</h3>\n            \n            <p>자기자비는 목적지가 아닌 여정입니다.<br/>\n            완벽하지 않아도 괜찮습니다.<br/>\n            때로 놓치고, 실패하고, 다시 시작해도 괜찮습니다.</p>\n            \n            <p><strong>중요한 것은 방향입니다.<br/>\n            당신은 이미 올바른 방향으로 가고 있습니다.</strong></p>\n            \n            <p>6개월 후, 1년 후, 당신은 더욱 성장해 있을 것입니다.<br/>\n            그때도 이 여정을 기억하며,<br/>\n            다시 한번 나에게 자비를 베푸세요.</p>\n            \n            <p style=\"font-size: 20px; font-weight: bold; color: #8E44AD; text-align: center; margin: 30px 0;\">\n                당신은 충분히 가치 있습니다.<br/>\n                그 자체로.\n            </p>\n            \n            <p style=\"margin-top: 40px; text-align: center;\">\n                당신을 응원합니다. 항상.<br/>\n                자기자비 여정 팀 일동 💚\n            </p>\n        </body>\n        </html>\n        ",
+      "attachments": []
+    }
+  ]
+}

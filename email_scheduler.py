@@ -1,562 +1,424 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-이메일 스케줄링 시스템
-=====================
-- 즉시 발송 (테스트 완료 알림)
-- 2시간 후 발송 (중간 분석 보고서)
-- 24시간 후 발송 (상세 분석 보고서 with PDF)
+Email Scheduling System for 28-Day Practice Guide
+28일 실천 가이드 이메일 스케줄링 시스템
 """
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import List, Dict, Optional
 import json
-import os
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.jobstores.memory import MemoryJobStore
-from apscheduler.executors.pool import ThreadPoolExecutor
-import logging
-
-# 로깅 설정
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-class EmailConfig:
-    """이메일 설정 (환경변수 또는 설정 파일에서 로드)"""
-    
-    def __init__(self):
-        # SMTP 서버 설정 (예: Gmail)
-        # 실제 운영시에는 환경변수에서 로드해야 함
-        self.SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-        self.SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
-        self.SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-        self.FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@selfesteem.com")
-        self.FROM_NAME = os.getenv("FROM_NAME", "자존감 연구팀")
-        
-        # 개발자/관리자 이메일 (알림 수신용)
-        self.ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
-        
-        # 이메일 전송 여부 (테스트 모드)
-        self.ENABLE_EMAIL = os.getenv("ENABLE_EMAIL", "false").lower() == "true"
-    
-    def is_configured(self) -> bool:
-        """SMTP 설정이 완료되었는지 확인"""
-        return bool(self.SMTP_USERNAME and self.SMTP_PASSWORD)
+from daily_practice_guide_v1 import DailyPracticeGuide
+from daily_practice_pdf_generator import DailyPracticePDFGenerator
 
 
 class EmailScheduler:
-    """이메일 예약 발송 시스템"""
+    """이메일 스케줄링 시스템"""
     
-    def __init__(self, config: EmailConfig = None):
-        self.config = config or EmailConfig()
+    def __init__(self):
+        self.practice_guide = None
+        self.pdf_generator = DailyPracticePDFGenerator()
         
-        # APScheduler 설정
-        jobstores = {
-            'default': MemoryJobStore()
-        }
-        executors = {
-            'default': ThreadPoolExecutor(max_workers=3)
-        }
-        job_defaults = {
-            'coalesce': False,
-            'max_instances': 3
-        }
-        
-        self.scheduler = BackgroundScheduler(
-            jobstores=jobstores,
-            executors=executors,
-            job_defaults=job_defaults,
-            timezone='Asia/Seoul'
-        )
-        
-        # 스케줄러 시작
-        if not self.scheduler.running:
-            self.scheduler.start()
-            logger.info("✅ Email Scheduler started")
-    
-    def send_email(self, 
-                   to_email: str, 
-                   subject: str, 
-                   body_html: str, 
-                   body_text: str = None,
-                   attachments: List[str] = None) -> bool:
+    def create_email_schedule(
+        self,
+        user_email: str,
+        user_name: str,
+        analysis_results: Dict,
+        start_date: datetime,
+        retest_link: str,
+        pdf_report_path: Optional[str] = None
+    ) -> Dict:
         """
-        이메일 발송
-        
-        Args:
-            to_email: 수신자 이메일
-            subject: 제목
-            body_html: HTML 본문
-            body_text: 텍스트 본문 (fallback)
-            attachments: 첨부파일 경로 리스트
-        
-        Returns:
-            성공 여부
-        """
-        try:
-            # 테스트 모드이거나 SMTP 미설정시 로그만 출력
-            if not self.config.ENABLE_EMAIL or not self.config.is_configured():
-                logger.info(f"📧 [TEST MODE] Email to {to_email}")
-                logger.info(f"   Subject: {subject}")
-                logger.info(f"   Body length: {len(body_html)} chars")
-                if attachments:
-                    logger.info(f"   Attachments: {len(attachments)} files")
-                return True
-            
-            # 실제 이메일 발송
-            msg = MIMEMultipart('alternative')
-            msg['From'] = f"{self.config.FROM_NAME} <{self.config.FROM_EMAIL}>"
-            msg['To'] = to_email
-            msg['Subject'] = subject
-            
-            # 텍스트 본문 추가
-            if body_text:
-                part_text = MIMEText(body_text, 'plain', 'utf-8')
-                msg.attach(part_text)
-            
-            # HTML 본문 추가
-            part_html = MIMEText(body_html, 'html', 'utf-8')
-            msg.attach(part_html)
-            
-            # 첨부파일 추가
-            if attachments:
-                for file_path in attachments:
-                    if os.path.exists(file_path):
-                        with open(file_path, 'rb') as f:
-                            part = MIMEBase('application', 'octet-stream')
-                            part.set_payload(f.read())
-                            encoders.encode_base64(part)
-                            filename = os.path.basename(file_path)
-                            part.add_header(
-                                'Content-Disposition',
-                                f'attachment; filename={filename}'
-                            )
-                            msg.attach(part)
-                    else:
-                        logger.warning(f"⚠️  첨부파일 없음: {file_path}")
-            
-            # SMTP 연결 및 발송
-            with smtplib.SMTP(self.config.SMTP_SERVER, self.config.SMTP_PORT) as server:
-                server.starttls()
-                server.login(self.config.SMTP_USERNAME, self.config.SMTP_PASSWORD)
-                server.send_message(msg)
-            
-            logger.info(f"✅ Email sent to {to_email}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Email sending failed: {e}")
-            return False
-    
-    def schedule_three_stage_emails(self,
-                                   user_email: str,
-                                   user_name: str,
-                                   emails: Dict,
-                                   pdf_path: Optional[str] = None,
-                                   profile: Dict = None) -> Dict:
-        """
-        3단계 이메일 예약 발송
+        28일 가이드 이메일 스케줄 생성
         
         Args:
             user_email: 사용자 이메일
             user_name: 사용자 이름
-            emails: {
-                'basic': {'subject': '', 'body': '', 'send_delay_minutes': 0},
-                'intermediate': {'subject': '', 'body': '', 'send_delay_minutes': 120},
-                'detailed': {'subject': '', 'body': '', 'send_delay_minutes': 1440}
-            }
-            pdf_path: PDF 파일 경로 (detailed 이메일에 첨부)
-            profile: 사용자 프로파일 정보 (개발자 알림용)
-        
+            analysis_results: 분석 결과 데이터
+            start_date: 시작 날짜
+            retest_link: 재검사 링크
+            pdf_report_path: PDF 보고서 경로 (선택사항)
+            
         Returns:
-            스케줄 정보
+            이메일 스케줄 데이터
         """
-        now = datetime.now()
-        scheduled_jobs = {}
+        # 28일 가이드 생성
+        self.practice_guide = DailyPracticeGuide(user_name, analysis_results)
+        all_days = self.practice_guide.generate_all_days()
         
-        # 1단계: 즉시 발송 (테스트 완료 알림)
-        if 'basic' in emails:
-            email_data = emails['basic']
-            result = self.send_email(
-                to_email=user_email,
-                subject=email_data['subject'],
-                body_html=email_data['body'],
-                body_text=self._strip_html(email_data['body'])
-            )
-            scheduled_jobs['basic'] = {
-                'status': 'sent' if result else 'failed',
-                'sent_at': now.isoformat(),
-                'scheduled_for': now.isoformat()
-            }
-            logger.info(f"📧 [Stage 1/3] Basic email sent to {user_email}")
+        # 28일 가이드 PDF 생성
+        daily_guide_pdf_path = self.pdf_generator.generate_daily_practice_pdf(
+            user_name=user_name,
+            all_days=all_days,
+            start_date=start_date,
+            retest_link=retest_link,
+            output_filename=f"daily_practice_guide_{user_name}.pdf"
+        )
         
-        # 2단계: 2시간 후 발송 (중간 분석)
-        if 'intermediate' in emails:
-            email_data = emails['intermediate']
-            send_time = now + timedelta(minutes=email_data['send_delay_minutes'])
-            
-            job = self.scheduler.add_job(
-                func=self.send_email,
-                trigger='date',
-                run_date=send_time,
-                args=[
-                    user_email,  # 사용자에게 발송
-                    email_data['subject'],
-                    email_data['body'],
-                    self._strip_html(email_data['body'])
-                ],
-                id=f"email_intermediate_{user_email}_{now.timestamp()}",
-                name=f"Intermediate email to {user_email}",
-                replace_existing=True
-            )
-            
-            scheduled_jobs['intermediate'] = {
-                'status': 'scheduled',
-                'job_id': job.id,
-                'scheduled_for': send_time.isoformat(),
-                'delay_minutes': email_data['send_delay_minutes']
-            }
-            logger.info(f"📅 [Stage 2/3] Intermediate email to {user_email} scheduled for {send_time}")
+        # 이메일 스케줄 구성
+        emails = []
         
-        # 3단계: 24시간 후 발송 (상세 보고서 with PDF)
-        if 'detailed' in emails:
-            email_data = emails['detailed']
-            send_time = now + timedelta(minutes=email_data['send_delay_minutes'])
-            
-            # PDF 첨부파일 준비
-            attachments = [pdf_path] if pdf_path and os.path.exists(pdf_path) else []
-            
-            job = self.scheduler.add_job(
-                func=self.send_email,
-                trigger='date',
-                run_date=send_time,
-                args=[
-                    user_email,  # 사용자에게 발송
-                    email_data['subject'],
-                    email_data['body'],
-                    self._strip_html(email_data['body']),
-                    attachments
-                ],
-                id=f"email_detailed_{user_email}_{now.timestamp()}",
-                name=f"Detailed email to {user_email}",
-                replace_existing=True
-            )
-            
-            scheduled_jobs['detailed'] = {
-                'status': 'scheduled',
-                'job_id': job.id,
-                'scheduled_for': send_time.isoformat(),
-                'delay_minutes': email_data['send_delay_minutes'],
-                'has_attachment': bool(attachments)
-            }
-            logger.info(f"📅 [Stage 3/3] Detailed email with PDF to {user_email} scheduled for {send_time}")
+        # 1. 진단 완료 이메일 (즉시 발송)
+        emails.append(self._create_diagnosis_complete_email(
+            user_email=user_email,
+            user_name=user_name,
+            send_at=start_date,
+            pdf_report_path=pdf_report_path,
+            daily_guide_pdf_path=daily_guide_pdf_path
+        ))
         
-        # 개발자에게 알림 이메일 보내기 (24시간 후 보낼 내용 미리보기)
-        if self.config.ADMIN_EMAIL and 'detailed' in emails:
-            self._send_admin_notification(
-                user_email=user_email,
-                user_name=user_name,
-                detailed_email=emails['detailed'],
-                profile=profile,
-                scheduled_time=send_time,
-                pdf_path=pdf_path
-            )
+        # 2. Week 1 시작 리마인더 (Day 1, 시작일)
+        emails.append(self._create_week_start_email(
+            user_email=user_email,
+            user_name=user_name,
+            week_num=1,
+            send_at=start_date,
+            day_data=all_days[0]
+        ))
+        
+        # 3. Week 2 시작 리마인더 (Day 8)
+        emails.append(self._create_week_start_email(
+            user_email=user_email,
+            user_name=user_name,
+            week_num=2,
+            send_at=start_date + timedelta(days=7),
+            day_data=all_days[7]
+        ))
+        
+        # 4. Week 3 시작 리마인더 (Day 15)
+        emails.append(self._create_week_start_email(
+            user_email=user_email,
+            user_name=user_name,
+            week_num=3,
+            send_at=start_date + timedelta(days=14),
+            day_data=all_days[14]
+        ))
+        
+        # 5. Week 4 시작 리마인더 (Day 22)
+        emails.append(self._create_week_start_email(
+            user_email=user_email,
+            user_name=user_name,
+            week_num=4,
+            send_at=start_date + timedelta(days=21),
+            day_data=all_days[21]
+        ))
+        
+        # 6. Day 28 완료 & 재검사 초대 이메일
+        emails.append(self._create_completion_email(
+            user_email=user_email,
+            user_name=user_name,
+            send_at=start_date + timedelta(days=27),
+            retest_link=retest_link,
+            day_data=all_days[27]
+        ))
+        
+        # 전체 스케줄 구성
+        schedule = {
+            "user_email": user_email,
+            "user_name": user_name,
+            "start_date": start_date.isoformat(),
+            "total_emails": len(emails),
+            "daily_guide_pdf": daily_guide_pdf_path,
+            "emails": emails
+        }
+        
+        return schedule
+    
+    def _create_diagnosis_complete_email(
+        self,
+        user_email: str,
+        user_name: str,
+        send_at: datetime,
+        pdf_report_path: Optional[str],
+        daily_guide_pdf_path: str
+    ) -> Dict:
+        """진단 완료 이메일"""
+        subject = f"[자존감 진단 완료] {user_name}님의 자기자비 여정이 시작됩니다 🌱"
+        
+        body_html = f"""
+        <html>
+        <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #2C3E50;">안녕하세요, {user_name}님!</h2>
+            
+            <p>자존감 진단이 완료되었습니다. 용기 내어 자신을 돌아본 당신을 응원합니다. 🎉</p>
+            
+            <h3 style="color: #3498DB;">📊 첨부 파일</h3>
+            <ul>
+                <li><strong>자존감 분석 보고서 PDF</strong> - 당신의 현재 상태와 숨겨진 강점</li>
+                <li><strong>28일 매일 실천 가이드 PDF</strong> - 하루하루 변화를 만드는 구체적 실천법</li>
+            </ul>
+            
+            <h3 style="color: #3498DB;">🚀 다음 단계</h3>
+            <ol>
+                <li>첨부된 <strong>분석 보고서</strong>를 먼저 읽어주세요 (10-15분)</li>
+                <li><strong>28일 가이드</strong>를 다운로드하여 보관하세요</li>
+                <li>오늘부터 Day 1을 시작하세요!</li>
+            </ol>
+            
+            <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
+                <h4 style="color: #F39C12; margin-top: 0;">💡 28일 여정 안내</h4>
+                <p>
+                    <strong>Week 1:</strong> 자기자비 기초 (자기비판 알아차리기)<br/>
+                    <strong>Week 2:</strong> 완벽주의 내려놓기<br/>
+                    <strong>Week 3:</strong> 공통 인간성 인식 (나만이 아니야)<br/>
+                    <strong>Week 4:</strong> 안정적 자기가치 확립
+                </p>
+            </div>
+            
+            <p>매주 월요일마다 그 주의 가이드를 리마인드 이메일로 보내드립니다.</p>
+            
+            <p>완벽하지 않아도 괜찮습니다. 하루를 놓쳐도 다시 시작하면 됩니다.</p>
+            
+            <p><strong>중요한 것은 방향입니다. 당신은 이미 첫 걸음을 내디뎠습니다.</strong></p>
+            
+            <p style="margin-top: 30px;">
+                응원합니다,<br/>
+                자기자비 여정 팀 💚
+            </p>
+        </body>
+        </html>
+        """
+        
+        attachments = []
+        if pdf_report_path:
+            attachments.append({
+                "type": "pdf",
+                "path": pdf_report_path,
+                "filename": f"{user_name}_자존감분석보고서.pdf"
+            })
+        attachments.append({
+            "type": "pdf",
+            "path": daily_guide_pdf_path,
+            "filename": f"{user_name}_28일실천가이드.pdf"
+        })
         
         return {
-            'user_email': user_email,
-            'user_name': user_name,
-            'scheduled_at': now.isoformat(),
-            'jobs': scheduled_jobs
+            "type": "diagnosis_complete",
+            "send_at": send_at.isoformat(),
+            "to": user_email,
+            "subject": subject,
+            "body_html": body_html,
+            "attachments": attachments
         }
     
-    def get_scheduled_jobs(self) -> List[Dict]:
-        """예약된 작업 목록 조회"""
-        jobs = []
-        for job in self.scheduler.get_jobs():
-            jobs.append({
-                'id': job.id,
-                'name': job.name,
-                'next_run_time': job.next_run_time.isoformat() if job.next_run_time else None,
-                'trigger': str(job.trigger)
-            })
-        return jobs
-    
-    def cancel_job(self, job_id: str) -> bool:
-        """작업 취소"""
-        try:
-            self.scheduler.remove_job(job_id)
-            logger.info(f"✅ Job {job_id} cancelled")
-            return True
-        except Exception as e:
-            logger.error(f"❌ Job cancellation failed: {e}")
-            return False
-    
-    def shutdown(self):
-        """스케줄러 종료"""
-        self.scheduler.shutdown()
-        logger.info("🛑 Email Scheduler stopped")
-    
-    def _strip_html(self, html: str) -> str:
-        """HTML 태그 제거 (간단한 텍스트 버전 생성)"""
-        import re
-        # HTML 태그 제거
-        text = re.sub(r'<[^>]+>', '', html)
-        # 연속된 공백 제거
-        text = re.sub(r'\s+', ' ', text)
-        # 연속된 줄바꿈 제거
-        text = re.sub(r'\n\s*\n', '\n\n', text)
-        return text.strip()
-    
-    def _send_admin_notification(self,
-                                user_email: str,
-                                user_name: str,
-                                detailed_email: Dict,
-                                profile: Dict,
-                                scheduled_time: datetime,
-                                pdf_path: Optional[str] = None):
-        """
-        개발자에게 알림 이메일 보내기
-        사용자가 받을 24시간 후 이메일 내용을 미리 확인
-        """
-        if not self.config.ADMIN_EMAIL:
-            logger.info("⚠️  ADMIN_EMAIL not configured, skipping admin notification")
-            return
+    def _create_week_start_email(
+        self,
+        user_email: str,
+        user_name: str,
+        week_num: int,
+        send_at: datetime,
+        day_data: Dict
+    ) -> Dict:
+        """주간 시작 리마인더 이메일"""
+        week_themes = {
+            1: "자기자비 기초 - 자기비판 알아차리기",
+            2: "완벽주의 내려놓기 - 80%의 용기",
+            3: "공통 인간성 인식 - 나만이 아니야",
+            4: "안정적 자기가치 - 존재 그 자체로"
+        }
         
-        # 프로파일 정보 추출
-        esteem_type = profile.get('esteem_type', 'Unknown') if profile else 'Unknown'
-        dimensions = profile.get('dimensions', {}) if profile else {}
-        rosenberg_score = profile.get('scores', {}).get('rosenberg', 0) if profile else 0
+        theme = week_themes.get(week_num, "")
+        subject = f"[Week {week_num} 시작] {user_name}님, {theme} 🌟"
         
-        # 개발자용 알림 이메일 생성
-        admin_subject = f"[알림] 새 사용자 리포트 생성: {user_email} ({esteem_type})"
-        
-        admin_body = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
-        .section {{ background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #667eea; }}
-        .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }}
-        .info-item {{ padding: 10px; background: white; border-radius: 4px; }}
-        .label {{ font-weight: bold; color: #667eea; }}
-        .preview {{ background: #fff; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; }}
-        .warning {{ background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 style="margin: 0;">📊 새 사용자 리포트 생성</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">24시간 후 발송될 이메일 미리보기</p>
-        </div>
-        
-        <div class="section">
-            <h2>👤 사용자 정보</h2>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="label">이메일</div>
-                    <div>{user_email}</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">이름</div>
-                    <div>{user_name}</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">프로파일 유형</div>
-                    <div>{esteem_type}</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">Rosenberg 점수</div>
-                    <div>{rosenberg_score}/40</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2>📈 5차원 점수</h2>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="label">자존감 안정성</div>
-                    <div>{dimensions.get('자존감_안정성', 'N/A')}/10</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">자기자비</div>
-                    <div>{dimensions.get('자기_자비', 'N/A')}/10</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">성장 마인드셋</div>
-                    <div>{dimensions.get('성장_마인드셋', 'N/A')}/10</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">관계적 독립성</div>
-                    <div>{dimensions.get('관계적_독립성', 'N/A')}/10</div>
-                </div>
-                <div class="info-item">
-                    <div class="label">암묵적 자존감</div>
-                    <div>{dimensions.get('암묵적_자존감', 'N/A')}/10</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2>⏰ 스케줄 정보</h2>
-            <p><strong>발송 예정 시간:</strong> {scheduled_time.strftime('%Y-%m-%d %H:%M:%S')}</p>
-            <p><strong>PDF 첨부:</strong> {'✅ Yes' if pdf_path and os.path.exists(pdf_path) else '❌ No'}</p>
-            {f'<p><strong>PDF 경로:</strong> {pdf_path}</p>' if pdf_path else ''}
-        </div>
-        
-        <div class="warning">
-            <h3 style="margin-top: 0;">⚠️ 확인 필요 사항</h3>
-            <ul>
-                <li>이메일 내용이 올바른지 확인하세요</li>
-                <li>PDF가 정상적으로 생성되었는지 확인하세요</li>
-                <li>개인화된 로드맵이 적절한지 검토하세요</li>
-            </ul>
-        </div>
-        
-        <div class="preview">
-            <h2>📧 사용자가 받을 이메일 미리보기</h2>
-            <hr>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
-                <h3>제목: {detailed_email['subject']}</h3>
-                <div style="white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.8;">
-{detailed_email['body'][:2000]}...
-
-[전체 내용은 첨부파일 또는 로그에서 확인]
-                </div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h3>📎 참고</h3>
-            <p>이 이메일은 자동으로 생성되었습니다.</p>
-            <p>문제가 있다면 즉시 스케줄러에서 해당 작업을 취소하세요:</p>
-            <code>curl -X POST http://localhost:8000/api/cancel-email/{{job_id}}</code>
-        </div>
-    </div>
-</body>
-</html>
-"""
-        
-        # 텍스트 버전
-        admin_text = f"""
-새 사용자 리포트 생성 알림
-==========================
-
-사용자 정보:
-- 이메일: {user_email}
-- 이름: {user_name}
-- 프로파일: {esteem_type}
-- Rosenberg 점수: {rosenberg_score}/40
-
-5차원 점수:
-- 자존감 안정성: {dimensions.get('자존감_안정성', 'N/A')}/10
-- 자기자비: {dimensions.get('자기_자비', 'N/A')}/10
-- 성장 마인드셋: {dimensions.get('성장_마인드셋', 'N/A')}/10
-- 관계적 독립성: {dimensions.get('관계적_독립성', 'N/A')}/10
-- 암묵적 자존감: {dimensions.get('암묵적_자존감', 'N/A')}/10
-
-발송 예정: {scheduled_time.strftime('%Y-%m-%d %H:%M:%S')}
-PDF 첨부: {'Yes' if pdf_path and os.path.exists(pdf_path) else 'No'}
-
-사용자가 받을 이메일 미리보기:
-{detailed_email['body'][:500]}...
-"""
-        
-        # 첨부파일 (PDF가 있으면 개발자에게도 보내기)
-        attachments = []
-        if pdf_path and os.path.exists(pdf_path):
-            attachments.append(pdf_path)
-        
-        # 이메일 발송
-        try:
-            result = self.send_email(
-                to_email=self.config.ADMIN_EMAIL,
-                subject=admin_subject,
-                body_html=admin_body,
-                body_text=admin_text,
-                attachments=attachments
-            )
+        body_html = f"""
+        <html>
+        <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #2C3E50;">Week {week_num}에 오신 것을 환영합니다, {user_name}님!</h2>
             
-            if result:
-                logger.info(f"✅ Admin notification sent to {self.config.ADMIN_EMAIL}")
-            else:
-                logger.warning(f"⚠️  Admin notification failed")
-                
-        except Exception as e:
-            logger.error(f"❌ Admin notification error: {e}")
-
-
-# ==================== 사용 예시 ====================
-
-def example_usage():
-    """이메일 스케줄러 사용 예시"""
-    
-    # 설정 초기화
-    config = EmailConfig()
-    scheduler = EmailScheduler(config)
-    
-    # 예시 이메일 데이터
-    emails = {
-        'basic': {
-            'subject': '🌟 테스트 완료! 당신에 대한 특별한 이야기를 준비하고 있습니다',
-            'body': '<h1>안녕하세요!</h1><p>테스트가 완료되었습니다.</p>',
-            'send_delay_minutes': 0
-        },
-        'intermediate': {
-            'subject': '📊 홍길동님의 자존감 프로파일이 완성되었습니다',
-            'body': '<h1>중간 분석</h1><p>당신의 프로파일이 준비되었습니다.</p>',
-            'send_delay_minutes': 120  # 2시간
-        },
-        'detailed': {
-            'subject': '💎 홍길동님을 위한 완전한 분석 보고서',
-            'body': '<h1>상세 보고서</h1><p>첨부된 PDF를 확인해주세요.</p>',
-            'send_delay_minutes': 1440  # 24시간
+            <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+                <h3 style="color: #27AE60; margin-top: 0;">이번 주 테마: {theme}</h3>
+            </div>
+            
+            <h3 style="color: #3498DB;">📅 Day {day_data.get('day')}: {day_data.get('title', '')}</h3>
+            
+            <p><strong>🌅 오늘의 아침 의식:</strong></p>
+            <p style="background-color: #FEF5E7; padding: 10px; border-radius: 5px; font-style: italic;">
+                "{day_data.get('morning_ritual', '')}"
+            </p>
+            
+            <p><strong>📖 오늘의 핵심 실천:</strong></p>
+            <p>{day_data.get('core_practice', {}).get('name', '')} 
+               ({day_data.get('core_practice', {}).get('duration', '')})</p>
+            
+            <p><strong>✅ 오늘의 작은 승리:</strong></p>
+            <p>{day_data.get('micro_win', '')}</p>
+            
+            <div style="background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>💡 Tip:</strong> 28일 가이드 PDF를 참고하여 오늘의 실천을 확인하세요!</p>
+            </div>
+            
+            <p>완벽하지 않아도 괜찮습니다. 오늘 하루만 집중하세요.</p>
+            
+            <p style="margin-top: 30px;">
+                당신을 응원합니다,<br/>
+                자기자비 여정 팀 💚
+            </p>
+        </body>
+        </html>
+        """
+        
+        return {
+            "type": f"week_{week_num}_start",
+            "send_at": send_at.isoformat(),
+            "to": user_email,
+            "subject": subject,
+            "body_html": body_html,
+            "attachments": []
         }
+    
+    def _create_completion_email(
+        self,
+        user_email: str,
+        user_name: str,
+        send_at: datetime,
+        retest_link: str,
+        day_data: Dict
+    ) -> Dict:
+        """완료 & 재검사 초대 이메일"""
+        subject = f"[28일 완주!] {user_name}님, 축하합니다! 🎉🏆"
+        
+        body_html = f"""
+        <html>
+        <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <h1 style="color: #8E44AD; text-align: center;">🎊🎊🎊 28일 완주! 축하합니다! 🎊🎊🎊</h1>
+            
+            <h2 style="color: #2C3E50;">정말 대단합니다, {user_name}님!</h2>
+            
+            <p>28일 동안 매일 자기자비를 실천한 당신을 진심으로 축하합니다.</p>
+            
+            <div style="background-color: #E8F8F5; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                <h3 style="color: #27AE60; margin-top: 0;">✅ 당신이 이룬 것들</h3>
+                <ul>
+                    <li>자기비판을 알아차렸습니다</li>
+                    <li>완벽주의를 내려놓기 시작했습니다</li>
+                    <li>혼자가 아님을 깨달았습니다</li>
+                    <li>존재 자체로 가치 있음을 배웠습니다</li>
+                    <li>나만의 자기자비 방법을 찾았습니다</li>
+                </ul>
+            </div>
+            
+            <h3 style="color: #3498DB;">🔍 이제 재검사를 통해 변화를 확인하세요</h3>
+            
+            <p>28일 전과 비교해서 무엇이 달라졌는지 확인해보세요.<br/>
+            숫자의 변화뿐 아니라, 당신 안의 변화를 느껴보세요.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{retest_link}" style="display: inline-block; background-color: #2874A6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-size: 18px; font-weight: bold;">
+                    🔗 재검사 시작하기
+                </a>
+            </div>
+            
+            <div style="background-color: #FEF5E7; padding: 20px; border-left: 4px solid #F39C12; margin: 20px 0;">
+                <h4 style="color: #F39C12; margin-top: 0;">💡 다음 단계</h4>
+                <ol>
+                    <li>재검사 완료하기</li>
+                    <li>Day 25에서 만든 '매일 루틴' 지속하기</li>
+                    <li>Day 26 미래 편지 6개월 후 열어보기</li>
+                    <li>Day 27 선언문 매일 보기</li>
+                    <li>필요할 때마다 28일 가이드 다시 읽기</li>
+                </ol>
+            </div>
+            
+            <h3 style="color: #2C3E50;">💌 마지막 메시지</h3>
+            
+            <p>자기자비는 목적지가 아닌 여정입니다.<br/>
+            완벽하지 않아도 괜찮습니다.<br/>
+            때로 놓치고, 실패하고, 다시 시작해도 괜찮습니다.</p>
+            
+            <p><strong>중요한 것은 방향입니다.<br/>
+            당신은 이미 올바른 방향으로 가고 있습니다.</strong></p>
+            
+            <p>6개월 후, 1년 후, 당신은 더욱 성장해 있을 것입니다.<br/>
+            그때도 이 여정을 기억하며,<br/>
+            다시 한번 나에게 자비를 베푸세요.</p>
+            
+            <p style="font-size: 20px; font-weight: bold; color: #8E44AD; text-align: center; margin: 30px 0;">
+                당신은 충분히 가치 있습니다.<br/>
+                그 자체로.
+            </p>
+            
+            <p style="margin-top: 40px; text-align: center;">
+                당신을 응원합니다. 항상.<br/>
+                자기자비 여정 팀 일동 💚
+            </p>
+        </body>
+        </html>
+        """
+        
+        return {
+            "type": "completion_and_retest",
+            "send_at": send_at.isoformat(),
+            "to": user_email,
+            "subject": subject,
+            "body_html": body_html,
+            "attachments": []
+        }
+    
+    def save_schedule_to_json(self, schedule: Dict, output_path: str = "email_schedule.json"):
+        """이메일 스케줄을 JSON 파일로 저장"""
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(schedule, f, ensure_ascii=False, indent=2)
+        return output_path
+
+
+# 테스트 코드
+if __name__ == "__main__":
+    print("=" * 60)
+    print("28일 가이드 이메일 스케줄링 시스템 테스트")
+    print("=" * 60)
+    
+    # 샘플 데이터
+    user_email = "sample@example.com"
+    user_name = "샘플사용자"
+    
+    analysis_results = {
+        "scores": {"rosenberg": 22},
+        "profile_type": "developing_critic",
+        "detected_patterns": [
+            {"type": "SELF_CRITICISM", "strength": 0.85},
+            {"type": "PERFECTIONISM", "strength": 0.78}
+        ],
+        "hidden_strengths": [
+            {"name": "회복탄력성", "description": "어려움 속에서도 다시 일어서는 힘"}
+        ]
     }
     
-    # 3단계 이메일 예약
-    schedule_info = scheduler.schedule_three_stage_emails(
-        user_email="user@example.com",
-        user_name="홍길동",
-        emails=emails,
-        pdf_path="/path/to/report.pdf"
+    start_date = datetime(2026, 2, 10, 9, 0, 0)  # 2026년 2월 10일 오전 9시
+    retest_link = "https://example.com/self-esteem/retest"
+    pdf_report_path = "outputs/report_example_user.pdf"
+    
+    # 스케줄러 생성
+    scheduler = EmailScheduler()
+    
+    # 이메일 스케줄 생성
+    schedule = scheduler.create_email_schedule(
+        user_email=user_email,
+        user_name=user_name,
+        analysis_results=analysis_results,
+        start_date=start_date,
+        retest_link=retest_link,
+        pdf_report_path=pdf_report_path
     )
     
-    print("=" * 60)
-    print("✅ 이메일 스케줄링 완료")
-    print("=" * 60)
-    print(json.dumps(schedule_info, indent=2, ensure_ascii=False))
+    # JSON으로 저장
+    json_path = scheduler.save_schedule_to_json(schedule, "outputs/email_schedule_sample.json")
     
-    # 예약된 작업 목록
-    print("\n📅 예약된 작업:")
-    for job in scheduler.get_scheduled_jobs():
-        print(f"  - {job['name']} ({job['next_run_time']})")
+    print(f"\n✅ 이메일 스케줄 생성 완료:")
+    print(f"   📧 수신자: {schedule['user_email']}")
+    print(f"   👤 이름: {schedule['user_name']}")
+    print(f"   📅 시작일: {schedule['start_date']}")
+    print(f"   📨 총 이메일 수: {schedule['total_emails']}")
+    print(f"   📄 28일 가이드 PDF: {schedule['daily_guide_pdf']}")
     
-    return scheduler
-
-
-if __name__ == "__main__":
-    scheduler = example_usage()
+    print(f"\n📋 이메일 발송 스케줄:")
+    for i, email in enumerate(schedule['emails'], 1):
+        send_time = datetime.fromisoformat(email['send_at'])
+        print(f"   {i}. [{email['type']}]")
+        print(f"      발송 시각: {send_time.strftime('%Y-%m-%d %H:%M')}")
+        print(f"      제목: {email['subject'][:50]}...")
+        if email.get('attachments'):
+            print(f"      첨부 파일: {len(email['attachments'])}개")
+        print()
     
-    print("\n💡 스케줄러가 백그라운드에서 실행 중입니다.")
-    print("   Ctrl+C를 눌러 종료하세요.")
-    
-    try:
-        # 계속 실행 (실제 운영에서는 서버와 함께 실행)
-        import time
-        while True:
-            time.sleep(60)
-    except KeyboardInterrupt:
-        print("\n🛑 스케줄러 종료 중...")
-        scheduler.shutdown()
-        print("✅ 종료 완료")
+    print(f"✅ JSON 스케줄 저장: {json_path}")
+    print("\n" + "=" * 60)
