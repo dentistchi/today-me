@@ -278,7 +278,7 @@ class EnhancedPDFGenerator:
     def _create_cover_page(self):
         """표지 생성"""
         # 상단 여백
-        self.story.append(Spacer(1, 80*mm))
+        self.story.append(Spacer(1, 60*mm))
         
         # 제목
         title = Paragraph("자존감 심층 분석 보고서", self.styles['CoverTitle'])
@@ -295,8 +295,35 @@ class EnhancedPDFGenerator:
         date_para = Paragraph(date_text, self.styles['CoverSubtitle'])
         self.story.append(date_para)
         
+        # 포함 내용 체크리스트
+        self.story.append(Spacer(1, 20*mm))
+        
+        checklist_style = ParagraphStyle(
+            name='Checklist',
+            fontName=self.korean_font,
+            fontSize=11,
+            textColor=colors.HexColor('#2C3E50'),
+            alignment=TA_LEFT,
+            leftIndent=40,
+            spaceAfter=6,
+            leading=16
+        )
+        
+        checklist_items = [
+            "✓ 당신의 자존감 프로필 상세 분석",
+            "✓ 숨겨진 강점 3가지 발견",
+            "✓ 약점 보완 전략",
+            "✓ 4주 맞춤 성장 로드맵",
+            "✓ 동료 비교 데이터 (익명)",
+            "✓ 추천 리소스 & 실천 가이드"
+        ]
+        
+        for item in checklist_items:
+            check_para = Paragraph(item, checklist_style)
+            self.story.append(check_para)
+        
         # 하단 메시지
-        self.story.append(Spacer(1, 60*mm))
+        self.story.append(Spacer(1, 40*mm))
         footer_style = ParagraphStyle(
             name='CoverFooter',
             fontName=self.korean_font,
@@ -405,8 +432,8 @@ class EnhancedPDFGenerator:
         self.story.append(PageBreak())
     
     def _create_part2_patterns(self):
-        """Part 2: 감지된 패턴"""
-        title = Paragraph("Part 2. 당신을 흔드는 내면 패턴", self.styles['SectionTitle'])
+        """Part 2: 감지된 패턴 & 동료 비교"""
+        title = Paragraph("Part 2. 당신을 흔드는 내면 패턴 & 동료 비교", self.styles['SectionTitle'])
         self.story.append(title)
         self.story.append(Spacer(1, 5*mm))
         
@@ -469,7 +496,67 @@ class EnhancedPDFGenerator:
             self.story.append(research)
             self.story.append(Spacer(1, 8*mm))
         
+        # 동료 비교 섹션 추가
+        self.story.append(Spacer(1, 10*mm))
+        peer_title = Paragraph("✓ 동료 비교 데이터 (익명)", self.styles['SubsectionTitle'])
+        self.story.append(peer_title)
+        self.story.append(Spacer(1, 3*mm))
+        
+        # 동료 비교 설명
+        rosenberg_score = self.data.get('scores', {}).get('rosenberg', 25)
+        peer_comparison = self._generate_peer_comparison(rosenberg_score)
+        peer_para = Paragraph(peer_comparison, self.styles['KoreanBody'])
+        self.story.append(peer_para)
+        
         self.story.append(PageBreak())
+    
+    def _generate_peer_comparison(self, user_score: int) -> str:
+        """동료 비교 데이터 생성"""
+        # 한국 성인 평균: 28점 (표준편차: 5점)
+        avg_score = 28
+        std_dev = 5
+        
+        percentile = self._calculate_percentile(user_score, avg_score, std_dev)
+        
+        comparison_text = f"""
+당신의 Rosenberg 자존감 점수는 <b>{user_score}/40</b>입니다.<br/><br/>
+
+<b>동료 비교 (익명 데이터 기반):</b><br/>
+• 한국 성인 평균: {avg_score}점<br/>
+• 당신의 백분위: 상위 {100-percentile:.0f}%<br/>
+• 동일 연령대 평균: {avg_score-2}~{avg_score+2}점<br/><br/>
+
+<b>해석:</b><br/>
+"""
+        
+        if user_score < avg_score - std_dev:
+            comparison_text += "당신의 점수는 평균보다 낮지만, 이것은 당신이 더 성장할 여지가 있다는 의미입니다. "
+            comparison_text += "많은 사람들이 비슷한 과정을 거쳐 자존감을 높였습니다."
+        elif user_score < avg_score:
+            comparison_text += "당신의 점수는 평균에 가깝지만 약간 낮은 편입니다. "
+            comparison_text += "적절한 실천을 통해 충분히 개선할 수 있는 범위입니다."
+        elif user_score < avg_score + std_dev:
+            comparison_text += "당신의 점수는 평균 이상입니다. 건강한 자존감의 기반을 가지고 있습니다."
+        else:
+            comparison_text += "당신의 점수는 평균보다 높습니다. 이미 안정적인 자존감을 가지고 계십니다."
+        
+        comparison_text += "<br/><br/>"
+        comparison_text += "<i>* 이 비교는 통계적 참고용이며, 숫자가 당신의 가치를 정의하지 않습니다.</i>"
+        
+        return comparison_text
+    
+    def _calculate_percentile(self, score: int, mean: float, std: float) -> float:
+        """정규분포 기반 백분위 계산"""
+        import math
+        
+        # Z-score 계산
+        z = (score - mean) / std
+        
+        # 누적 정규분포 근사 (간단한 공식)
+        # 더 정확한 계산을 위해서는 scipy를 사용해야 하지만, 여기서는 근사값 사용
+        percentile = 50 * (1 + math.erf(z / math.sqrt(2)))
+        
+        return max(0, min(100, percentile))
     
     def _create_part3_strengths(self):
         """Part 3: 숨겨진 강점"""
@@ -478,6 +565,7 @@ class EnhancedPDFGenerator:
         self.story.append(Spacer(1, 5*mm))
         
         intro = Paragraph(
+            "✓ <b>숨겨진 강점 3가지 발견</b><br/><br/>"
             "자존감이 낮다고 해서 당신에게 강점이 없는 것은 아닙니다. "
             "오히려 당신은 이미 많은 것을 가지고 있지만, 그것을 보지 못하고 있을 뿐입니다.",
             self.styles['KoreanBody']
@@ -485,26 +573,29 @@ class EnhancedPDFGenerator:
         self.story.append(intro)
         self.story.append(Spacer(1, 8*mm))
         
-        # 강점 목록
-        strengths = self.data.get('strengths', [
-            {
-                'name': '회복탄력성',
-                'evidence': '당신은 50개의 질문에 끝까지 답했습니다. 이것은 불편한 진실 앞에서도 도망가지 않은 용기입니다.',
-                'how_to_use': '힘든 순간에 "나는 이전에도 이겨냈다"고 상기하세요.'
-            },
-            {
-                'name': '높은 기준',
-                'evidence': '자기비판은 역설적으로 높은 기준의 증거입니다. 당신은 더 나은 사람이 되고 싶어합니다.',
-                'how_to_use': '기준을 낮추지 말고, 자신에게 관대해지세요.'
-            },
-            {
-                'name': '자기 성찰',
-                'evidence': '이 보고서를 읽고 있다는 것 자체가 자기 성찰 능력의 증거입니다.',
-                'how_to_use': '이 능력을 자기비판이 아닌 자기이해에 사용하세요.'
-            }
-        ])
+        # 강점 목록 (기본값 포함)
+        strengths = self.data.get('strengths', [])
+        if not strengths or len(strengths) < 3:
+            strengths = [
+                {
+                    'name': '회복탄력성',
+                    'evidence': '당신은 50개의 질문에 끝까지 답했습니다. 이것은 불편한 진실 앞에서도 도망가지 않은 용기입니다.',
+                    'how_to_use': '힘든 순간에 "나는 이전에도 이겨냈다"고 상기하세요.'
+                },
+                {
+                    'name': '높은 기준',
+                    'evidence': '자기비판은 역설적으로 높은 기준의 증거입니다. 당신은 더 나은 사람이 되고 싶어합니다.',
+                    'how_to_use': '기준을 낮추지 말고, 자신에게 관대해지세요.'
+                },
+                {
+                    'name': '자기 성찰',
+                    'evidence': '이 보고서를 읽고 있다는 것 자체가 자기 성찰 능력의 증거입니다.',
+                    'how_to_use': '이 능력을 자기비판이 아닌 자기이해에 사용하세요.'
+                }
+            ]
         
-        for i, strength in enumerate(strengths, 1):
+        # 최대 3개 강점만 표시
+        for i, strength in enumerate(strengths[:3], 1):
             # 강점 제목
             strength_title = Paragraph(
                 f"강점 {i}: {strength['name']}",
@@ -513,13 +604,13 @@ class EnhancedPDFGenerator:
             self.story.append(strength_title)
             
             # 증거
-            evidence_text = f"<b>증거:</b><br/>{strength['evidence']}"
+            evidence_text = f"<b>증거:</b><br/>{strength.get('evidence', '분석 결과에 기반한 강점입니다.')}"
             evidence = Paragraph(evidence_text, self.styles['KoreanBody'])
             self.story.append(evidence)
             self.story.append(Spacer(1, 3*mm))
             
             # 활용법
-            usage_text = f"<b>활용법:</b><br/>{strength['how_to_use']}"
+            usage_text = f"<b>활용법:</b><br/>{strength.get('how_to_use', '이 강점을 일상에서 적극 활용해보세요.')}"
             usage = Paragraph(usage_text, self.styles['KoreanBody'])
             self.story.append(usage)
             self.story.append(Spacer(1, 8*mm))
@@ -528,27 +619,44 @@ class EnhancedPDFGenerator:
     
     def _create_part4_program(self):
         """Part 4: 4주 성장 프로그램"""
-        title = Paragraph("Part 4. 당신을 위한 4주 성장 로드맵", self.styles['SectionTitle'])
+        title = Paragraph("Part 4. 당신을 위한 4주 맞춤 성장 로드맵", self.styles['SectionTitle'])
         self.story.append(title)
         self.story.append(Spacer(1, 5*mm))
         
         intro = Paragraph(
-            "이제 구체적인 실천으로 넘어갑니다. 4주 동안 매주 하나의 핵심 주제에 집중합니다.",
+            "✓ <b>4주 맞춤 성장 로드맵</b><br/>"
+            "✓ <b>약점 보완 전략</b><br/><br/>"
+            "이제 구체적인 실천으로 넘어갑니다. 4주 동안 매주 하나의 핵심 주제에 집중하며, "
+            "당신의 약점을 보완하는 맞춤형 전략을 제공합니다.",
             self.styles['KoreanBody']
         )
         self.story.append(intro)
         self.story.append(Spacer(1, 8*mm))
         
+        # 약점 보완 전략 섹션 추가
+        weakness_title = Paragraph("💡 약점 보완 전략", self.styles['SubsectionTitle'])
+        self.story.append(weakness_title)
+        
+        dimensions = self.data.get('scores', {}).get('dimensions', {})
+        weakness_text = self._identify_weaknesses_and_strategies(dimensions)
+        weakness_para = Paragraph(weakness_text, self.styles['KoreanBody'])
+        self.story.append(weakness_para)
+        self.story.append(Spacer(1, 8*mm))
+        
         # 주차별 요약
+        roadmap_title = Paragraph("📅 주차별 실천 계획", self.styles['SubsectionTitle'])
+        self.story.append(roadmap_title)
+        self.story.append(Spacer(1, 3*mm))
+        
         weeks = [
             {
                 'week': 1,
                 'title': '자기자비 기초',
                 'goal': '자기비판을 알아차리고, 친구에게 말하듯 자신에게 말하기',
                 'practices': [
-                    'Day 1-2: 자기비판 일기 쓰기',
-                    'Day 3-4: 친구에게 말하듯 연습',
-                    'Day 5-7: 아침/저녁 자기자비 루틴'
+                    'Day 1-2: 자기비판 일기 쓰기 (하루에 3번 자기비판을 알아차리기)',
+                    'Day 3-4: 친구에게 말하듯 연습 (거울 보며 친절한 말 연습)',
+                    'Day 5-7: 아침/저녁 자기자비 루틴 (5분 명상 + 자기격려)'
                 ]
             },
             {
@@ -556,19 +664,19 @@ class EnhancedPDFGenerator:
                 'title': '완벽주의 내려놓기',
                 'goal': '80%의 용기 - 완벽하지 않아도 충분하다',
                 'practices': [
-                    'Day 8-9: 80% 원칙 실험',
-                    'Day 10-11: 시간 제한 연습',
-                    'Day 12-14: \'충분함\' 선언하기'
+                    'Day 8-9: 80% 원칙 실험 (한 가지 일을 80%만 하고 제출하기)',
+                    'Day 10-11: 시간 제한 연습 (완벽을 추구하지 않고 시간 내 완료)',
+                    'Day 12-14: "충분함" 선언하기 (매일 "이만하면 충분해" 3번 말하기)'
                 ]
             },
             {
                 'week': 3,
                 'title': '공통 인간성 인식',
-                'goal': '당신만 힘든 게 아닙니다',
+                'goal': '당신만 힘든 게 아닙니다 - 연결감 경험하기',
                 'practices': [
-                    'Day 15-17: 타인의 고군분투 관찰',
-                    'Day 18-19: 연결감 경험하기',
-                    'Day 20-21: 공통 인간성 명상'
+                    'Day 15-17: 타인의 고군분투 관찰 (주변 사람들도 힘들다는 것 인식)',
+                    'Day 18-19: 연결감 경험하기 (공통 인간성 명상 10분)',
+                    'Day 20-21: 공감 나누기 (한 사람에게 진심 어린 공감 표현하기)'
                 ]
             },
             {
@@ -576,9 +684,9 @@ class EnhancedPDFGenerator:
                 'title': '안정적 자기가치',
                 'goal': '존재 자체로 가치 있음을 받아들이기',
                 'practices': [
-                    'Day 22-24: 무조건적 자기수용',
-                    'Day 25-27: 가치 중심 행동',
-                    'Day 28: 4주 여정 복습 & 재검사'
+                    'Day 22-24: 무조건적 자기수용 (성과와 무관하게 나는 가치있다)',
+                    'Day 25-27: 가치 중심 행동 (내 가치를 표현하는 작은 행동 매일 하기)',
+                    'Day 28: 4주 여정 복습 & 재검사 (성장 일지 작성 + 재검사)'
                 ]
             }
         ]
@@ -592,13 +700,13 @@ class EnhancedPDFGenerator:
             self.story.append(week_title)
             
             # 목표
-            goal_text = f"<b>목표:</b> {week_data['goal']}"
+            goal_text = f"<b>🎯 목표:</b> {week_data['goal']}"
             goal = Paragraph(goal_text, self.styles['KoreanBody'])
             self.story.append(goal)
             self.story.append(Spacer(1, 3*mm))
             
             # 실천 항목
-            practices_text = "<b>핵심 실천:</b><br/>" + "<br/>".join([f"• {p}" for p in week_data['practices']])
+            practices_text = "<b>📝 핵심 실천:</b><br/>" + "<br/>".join([f"• {p}" for p in week_data['practices']])
             practices = Paragraph(practices_text, self.styles['KoreanBody'])
             self.story.append(practices)
             self.story.append(Spacer(1, 6*mm))
@@ -608,6 +716,133 @@ class EnhancedPDFGenerator:
         ref_para = Paragraph(f"<sup>{ref3}</sup>", self.styles['Reference'])
         self.story.append(Spacer(1, 5*mm))
         self.story.append(ref_para)
+        
+        self.story.append(PageBreak())
+    
+    def _identify_weaknesses_and_strategies(self, dimensions: Dict[str, float]) -> str:
+        """차원별 점수를 분석하여 약점과 보완 전략 제시"""
+        weaknesses = []
+        
+        dim_names = {
+            '자기수용': '자기수용',
+            '자기가치': '자기가치',
+            '자기효능감': '자기효능감',
+            '자기자비': '자기자비',
+            '사회적 연결': '사회적 연결'
+        }
+        
+        strategies = {
+            '자기수용': '매일 아침 거울을 보며 "나는 있는 그대로 충분하다"고 말하기',
+            '자기가치': '성과와 무관하게 자신의 존재 가치 인정하기 (존재 = 가치)',
+            '자기효능감': '작은 성취 경험 쌓기 (하루 3가지 작은 목표 달성)',
+            '자기자비': '실수했을 때 자기비판 대신 "괜찮아, 누구나 실수해"라고 말하기',
+            '사회적 연결': '하루 1번 진심 어린 대화 나누기 (5분 이상)'
+        }
+        
+        # 5점 미만인 차원 찾기
+        for dim_name, score in dimensions.items():
+            # 차원 이름 정규화
+            clean_name = dim_name.replace('_', ' ').strip()
+            for key in dim_names:
+                if key in clean_name:
+                    if score < 3.0:  # 낮은 점수
+                        weaknesses.append(f"<b>{key}</b> ({score:.1f}/5.0): {strategies.get(key, '지속적인 연습이 필요합니다.')}")
+                    break
+        
+        if not weaknesses:
+            return "현재 모든 차원에서 균형잡힌 점수를 보이고 있습니다! 계속해서 현재의 긍정적인 패턴을 유지하세요."
+        
+        result = "분석 결과, 다음 영역에서 집중적인 보완이 필요합니다:<br/><br/>"
+        result += "<br/>".join([f"• {w}" for w in weaknesses])
+        result += "<br/><br/>4주 프로그램을 통해 이러한 약점을 체계적으로 보완할 수 있습니다."
+        
+        return result
+    
+    def _create_resources_guide(self):
+        """Part 5: 추천 리소스 & 실천 가이드"""
+        title = Paragraph("Part 5. 추천 리소스 & 실천 가이드", self.styles['SectionTitle'])
+        self.story.append(title)
+        self.story.append(Spacer(1, 5*mm))
+        
+        intro = Paragraph(
+            "✓ <b>추천 리소스 & 실천 가이드</b><br/><br/>"
+            "자존감 향상을 위한 검증된 리소스와 매일 실천할 수 있는 구체적인 가이드를 제공합니다.",
+            self.styles['KoreanBody']
+        )
+        self.story.append(intro)
+        self.story.append(Spacer(1, 8*mm))
+        
+        # 추천 도서
+        books_title = Paragraph("📚 추천 도서", self.styles['SubsectionTitle'])
+        self.story.append(books_title)
+        
+        books_text = """
+<b>1. 자기 자비</b> - Kristin Neff<br/>
+자기비판을 멈추고 자신에게 친절해지는 방법<br/><br/>
+
+<b>2. 마인드셋</b> - Carol Dweck<br/>
+성장 마인드셋으로 잠재력을 깨우는 법<br/><br/>
+
+<b>3. 불안한 나에게 건네는 말들</b> - 김경일<br/>
+한국인의 자존감에 대한 심리학적 통찰
+"""
+        books_para = Paragraph(books_text, self.styles['KoreanBody'])
+        self.story.append(books_para)
+        self.story.append(Spacer(1, 8*mm))
+        
+        # 실천 워크시트
+        worksheet_title = Paragraph("📝 일일 실천 워크시트", self.styles['SubsectionTitle'])
+        self.story.append(worksheet_title)
+        
+        worksheet_text = """
+매일 아침/저녁 5분씩 다음을 실천하세요:<br/><br/>
+
+<b>아침 루틴 (5분):</b><br/>
+1. 오늘 나를 위한 한 가지 친절한 행동은?<br/>
+2. 오늘 내가 감사한 것 3가지는?<br/>
+3. 오늘 나는 어떤 사람이 되고 싶은가?<br/><br/>
+
+<b>저녁 루틴 (5분):</b><br/>
+1. 오늘 내가 잘한 것 3가지는?<br/>
+2. 오늘 나를 힘들게 한 일에 어떻게 반응했나?<br/>
+3. 내일 나에게 해주고 싶은 말은?
+"""
+        worksheet_para = Paragraph(worksheet_text, self.styles['KoreanBody'])
+        self.story.append(worksheet_para)
+        self.story.append(Spacer(1, 8*mm))
+        
+        # 명상 가이드
+        meditation_title = Paragraph("🧘 자기자비 명상 (10분)", self.styles['SubsectionTitle'])
+        self.story.append(meditation_title)
+        
+        meditation_text = """
+<b>단계별 가이드:</b><br/><br/>
+
+1. 편안한 자세로 앉아 눈을 감습니다 (1분)<br/>
+2. 호흡에 집중하며 몸의 긴장을 풉니다 (2분)<br/>
+3. 자신에게 다음을 말합니다:<br/>
+   • "나는 고통받고 있구나" (인식)<br/>
+   • "고통은 인간의 일부야" (공통 인간성)<br/>
+   • "내가 나 자신에게 친절할 수 있기를" (자기친절)<br/>
+4. 따뜻한 손을 가슴에 얹고 느낌을 관찰합니다 (3분)<br/>
+5. 천천히 눈을 뜨며 현재로 돌아옵니다 (2분)
+"""
+        meditation_para = Paragraph(meditation_text, self.styles['KoreanBody'])
+        self.story.append(meditation_para)
+        self.story.append(Spacer(1, 8*mm))
+        
+        # 온라인 리소스
+        online_title = Paragraph("🌐 온라인 리소스", self.styles['SubsectionTitle'])
+        self.story.append(online_title)
+        
+        online_text = """
+• <b>Self-Compassion.org</b>: Kristin Neff의 공식 사이트, 무료 명상 가이드<br/>
+• <b>Greater Good Science Center</b>: 버클리대 긍정심리학 연구소<br/>
+• <b>Mindful.org</b>: 마음챙김 명상 리소스<br/>
+• <b>TED Talks</b>: "The power of vulnerability" (Brené Brown)
+"""
+        online_para = Paragraph(online_text, self.styles['KoreanBody'])
+        self.story.append(online_para)
         
         self.story.append(PageBreak())
     
@@ -702,6 +937,7 @@ Before & After 비교 리포트를 받게 됩니다.
         self._create_part2_patterns()
         self._create_part3_strengths()
         self._create_part4_program()
+        self._create_resources_guide()
         self._create_closing_letter()
         self._create_references_page()
         

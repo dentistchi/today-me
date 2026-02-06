@@ -205,7 +205,7 @@ class EmailScheduler:
                 trigger='date',
                 run_date=send_time,
                 args=[
-                    user_email,
+                    user_email,  # 사용자에게 발송
                     email_data['subject'],
                     email_data['body'],
                     self._strip_html(email_data['body'])
@@ -221,7 +221,7 @@ class EmailScheduler:
                 'scheduled_for': send_time.isoformat(),
                 'delay_minutes': email_data['send_delay_minutes']
             }
-            logger.info(f"📅 [Stage 2/3] Intermediate email scheduled for {send_time}")
+            logger.info(f"📅 [Stage 2/3] Intermediate email to {user_email} scheduled for {send_time}")
         
         # 3단계: 24시간 후 발송 (상세 보고서 with PDF)
         if 'detailed' in emails:
@@ -236,7 +236,7 @@ class EmailScheduler:
                 trigger='date',
                 run_date=send_time,
                 args=[
-                    user_email,
+                    user_email,  # 사용자에게 발송
                     email_data['subject'],
                     email_data['body'],
                     self._strip_html(email_data['body']),
@@ -254,7 +254,7 @@ class EmailScheduler:
                 'delay_minutes': email_data['send_delay_minutes'],
                 'has_attachment': bool(attachments)
             }
-            logger.info(f"📅 [Stage 3/3] Detailed email scheduled for {send_time}")
+            logger.info(f"📅 [Stage 3/3] Detailed email with PDF to {user_email} scheduled for {send_time}")
         
         # 개발자에게 알림 이메일 보내기 (24시간 후 보낼 내용 미리보기)
         if self.config.ADMIN_EMAIL and 'detailed' in emails:
