@@ -157,15 +157,15 @@ class CarelessResponseDetector:
             max_consecutive_fast >= 3
         )
         
-        return is_speeder, {
-            "avg_time": round(avg_time, 2),
-            "min_time": round(min_time, 2),
-            "max_time": round(max_time, 2),
-            "max_consecutive_fast": max_consecutive_fast,
-            "fast_count": fast_count,
-            "fast_ratio": round(fast_count / len(times), 3),
-            "threshold": self.min_time_per_item,
-            "is_flagged": is_speeder
+        return bool(is_speeder), {
+            "avg_time": round(float(avg_time), 2),
+            "min_time": round(float(min_time), 2),
+            "max_time": round(float(max_time), 2),
+            "max_consecutive_fast": int(max_consecutive_fast),
+            "fast_count": int(fast_count),
+            "fast_ratio": round(float(fast_count / len(times)), 3),
+            "threshold": float(self.min_time_per_item),
+            "is_flagged": bool(is_speeder)
         }
     
     def _check_longstring(self, responses: List[int]) -> Tuple[bool, Dict]:
@@ -207,11 +207,11 @@ class CarelessResponseDetector:
         
         is_longstring = max_streak >= self.longstring_threshold
         
-        return is_longstring, {
-            "max_streak": max_streak,
-            "threshold": self.longstring_threshold,
+        return bool(is_longstring), {
+            "max_streak": int(max_streak),
+            "threshold": int(self.longstring_threshold),
             "long_streaks": streaks,
-            "is_flagged": is_longstring
+            "is_flagged": bool(is_longstring)
         }
     
     def _check_consistency(self, responses: List[int]) -> Tuple[bool, Dict]:
@@ -247,19 +247,21 @@ class CarelessResponseDetector:
             # NaN 체크 (분산이 0일 때 발생)
             if np.isnan(correlation):
                 correlation = 0.0
+            else:
+                correlation = float(correlation)
         except:
             correlation = 0.0
         
         is_inconsistent = correlation < self.correlation_threshold
         
-        return is_inconsistent, {
+        return bool(is_inconsistent), {
             "correlation": round(float(correlation), 3),
-            "threshold": self.correlation_threshold,
-            "even_items_count": len(even_items),
-            "odd_items_count": len(odd_items),
+            "threshold": float(self.correlation_threshold),
+            "even_items_count": int(len(even_items)),
+            "odd_items_count": int(len(odd_items)),
             "even_mean": round(float(np.mean(even_items)), 2),
             "odd_mean": round(float(np.mean(odd_items)), 2),
-            "is_flagged": is_inconsistent
+            "is_flagged": bool(is_inconsistent)
         }
     
     def _check_mahalanobis(self, 
@@ -296,12 +298,12 @@ class CarelessResponseDetector:
             is_outlier = distance**2 > chi2_threshold
             p_value = float(1 - stats.chi2.cdf(distance**2, df))
             
-            return is_outlier, {
+            return bool(is_outlier), {
                 "distance": round(float(distance), 3),
                 "distance_squared": round(float(distance**2), 3),
                 "chi2_threshold": round(float(chi2_threshold), 3),
-                "p_value": round(p_value, 6),
-                "is_flagged": is_outlier
+                "p_value": round(float(p_value), 6),
+                "is_flagged": bool(is_outlier)
             }
         except Exception as e:
             return False, {
@@ -319,10 +321,10 @@ class CarelessResponseDetector:
         variance = np.var(responses)
         is_low_variance = variance < self.variance_threshold
         
-        return is_low_variance, {
+        return bool(is_low_variance), {
             "variance": round(float(variance), 3),
-            "threshold": self.variance_threshold,
-            "is_flagged": is_low_variance
+            "threshold": float(self.variance_threshold),
+            "is_flagged": bool(is_low_variance)
         }
 
     def _calculate_quality_score(self, flags: List[str], details: Dict) -> float:
