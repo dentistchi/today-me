@@ -1,0 +1,7 @@
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[테스트] 이메일 발송 시스템 확인", "attachments": 0, "timestamp": "2026-02-07T00:00:18.420891"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[자존감 진단 완료] 사용자님의 자기자비 여정이 시작됩니다 🌱", "attachments": 1, "timestamp": "2026-02-07T00:03:17.597896"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 1 시작] 사용자님, 자기자비 기초 - 자기비판 알아차리기 🌟", "attachments": 0, "timestamp": "2026-02-07T00:03:18.683946"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 2 시작] 사용자님, 완벽주의 내려놓기 - 80%의 용기 🌟", "attachments": 0, "timestamp": "2026-02-07T00:03:19.724283"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 3 시작] 사용자님, 공통 인간성 인식 - 나만이 아니야 🌟", "attachments": 0, "timestamp": "2026-02-07T00:03:20.784793"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 4 시작] 사용자님, 안정적 자기가치 - 존재 그 자체로 🌟", "attachments": 0, "timestamp": "2026-02-07T00:03:22.035572"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[28일 완주!] 사용자님, 축하합니다! 🎉🏆", "attachments": 0, "timestamp": "2026-02-07T00:03:22.753795"}
