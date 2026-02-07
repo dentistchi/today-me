@@ -36,7 +36,7 @@ def send_user_emails(
     pdf_report_path: str = None
 ):
     """
-    사용자에게 6개 이메일 실제 발송
+    사용자에게 7개 이메일 실제 발송
     
     Args:
         user_email: 사용자 이메일
@@ -87,7 +87,7 @@ def send_user_emails(
         pdf_report_path=pdf_report_path
     )
     
-    # 6개 이메일 생성
+    # 7개 이메일 생성
     emails = email_system.generate_all_emails()
     print(f"✅ {len(emails)}개 이메일 생성 완료")
     print()

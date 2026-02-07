@@ -15,13 +15,14 @@ class WeeklyEmailSystem:
     """
     28일 가이드 주간 이메일 시스템
     
-    사용자별로 6개의 이메일을 생성하고 발송 준비:
+    사용자별로 7개의 이메일을 생성하고 발송 준비:
     1. 진단 완료 (즉시)
     2. Week 1 시작 (Day 1)
-    3. Week 2 시작 (Day 8)
-    4. Week 3 시작 (Day 15)
-    5. Week 4 시작 (Day 22)
-    6. 완료 & 재검사 (Day 28)
+    3. 24시간 후 결과 리포트 (Day 2, +1일)
+    4. Week 2 시작 (Day 8)
+    5. Week 3 시작 (Day 15)
+    6. Week 4 시작 (Day 22)
+    7. 완료 & 재검사 (Day 28)
     """
     
     def __init__(
@@ -70,7 +71,7 @@ class WeeklyEmailSystem:
     
     def generate_all_emails(self) -> List[Dict]:
         """
-        6개 이메일 전체 생성
+        7개 이메일 전체 생성
         
         Returns:
             이메일 리스트 (각 이메일은 to, subject, body_html, attachments, send_at 포함)
@@ -351,7 +352,7 @@ def example_usage():
         retest_link='https://example.com/retest'
     )
     
-    # 2. 6개 이메일 전체 생성
+    # 2. 7개 이메일 전체 생성
     emails = email_system.generate_all_emails()
     
     print(f"✅ {len(emails)}개 이메일 생성 완료\n")

@@ -103,7 +103,15 @@ class EmailScheduler:
             day_data=all_days[21]
         ))
         
-        # 6. Day 28 완료 & 재검사 초대 이메일
+        # 6. 24시간 후 결과 리포트 (Day 2, +1일)
+        emails.append(self._create_24h_report_email(
+            user_email=user_email,
+            user_name=user_name,
+            send_at=start_date + timedelta(days=1),
+            pdf_report_path=pdf_report_path
+        ))
+        
+        # 7. Day 28 완료 & 재검사 초대 이메일
         emails.append(self._create_completion_email(
             user_email=user_email,
             user_name=user_name,
@@ -352,6 +360,95 @@ class EmailScheduler:
             "subject": subject,
             "body_html": body_html,
             "attachments": []
+        }
+    
+    def _create_24h_report_email(
+        self,
+        user_email: str,
+        user_name: str,
+        send_at: datetime,
+        pdf_report_path: Optional[str]
+    ) -> Dict:
+        """24시간 후 결과 리포트 이메일"""
+        subject = f"[자존감 분석 결과] {user_name}님, 당신의 진단 결과를 확인하세요 📊"
+        
+        body_html = f"""
+        <html>
+        <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #2C3E50;">안녕하세요, {user_name}님!</h2>
+            
+            <p>어제 진단을 완료하신 것을 축하드립니다. 🎉</p>
+            
+            <p>자신을 돌아보는 것은 쉽지 않은 일입니다.<br/>
+            용기 내어 첫 걸음을 내디딘 당신을 진심으로 응원합니다.</p>
+            
+            <div style="background-color: #E8F8F5; padding: 20px; border-left: 4px solid #27AE60; margin: 20px 0;">
+                <h3 style="color: #27AE60; margin-top: 0;">📊 당신의 진단 결과</h3>
+                <p>첨부된 <strong>자존감 분석 보고서 PDF</strong>에서 다음을 확인하실 수 있습니다:</p>
+                <ul>
+                    <li><strong>현재 상태:</strong> 객관적인 자존감 점수와 분석</li>
+                    <li><strong>행동 패턴:</strong> 무의식적으로 반복하는 패턴 발견</li>
+                    <li><strong>숨겨진 강점:</strong> 당신이 놓치고 있던 내면의 자원</li>
+                    <li><strong>구체적 실천법:</strong> 오늘부터 시작할 수 있는 작은 변화</li>
+                </ul>
+            </div>
+            
+            <h3 style="color: #3498DB;">🚀 오늘은 Day 2입니다</h3>
+            
+            <p>28일 가이드 PDF의 <strong>Day 2</strong>를 확인하세요.<br/>
+            오늘의 실천은 단 <strong>5-10분</strong>이면 충분합니다.</p>
+            
+            <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
+                <h4 style="color: #F39C12; margin-top: 0;">💡 읽는 방법</h4>
+                <ol>
+                    <li><strong>분석 보고서:</strong> 천천히 읽으며 자신을 이해하세요 (15-20분)</li>
+                    <li><strong>감정 확인:</strong> 읽으면서 어떤 감정이 드는지 알아차리세요</li>
+                    <li><strong>강점 찾기:</strong> '숨겨진 강점' 섹션을 특히 주의 깊게 보세요</li>
+                    <li><strong>실천 시작:</strong> 가장 쉬운 것 하나를 오늘 실천해보세요</li>
+                </ol>
+            </div>
+            
+            <h3 style="color: #2C3E50;">📌 기억하세요</h3>
+            
+            <p>이 보고서는 당신을 판단하기 위한 것이 아닙니다.<br/>
+            <strong>변화의 출발점을 찾기 위한 도구</strong>입니다.</p>
+            
+            <p>낮은 점수는 실패가 아니라 <strong>성장의 여지</strong>입니다.<br/>
+            높은 점수도 완벽함이 아니라 <strong>계속 가꿔야 할 것</strong>입니다.</p>
+            
+            <div style="background-color: #E8F4F8; padding: 20px; border-radius: 10px; margin: 30px 0;">
+                <p style="font-size: 18px; font-weight: bold; color: #2874A6; margin: 0; text-align: center;">
+                    당신은 이미 변화를 시작했습니다.<br/>
+                    오늘도 한 걸음 더 나아가세요. 💚
+                </p>
+            </div>
+            
+            <p>궁금한 점이 있으시면 언제든 답장해 주세요.<br/>
+            28일 동안 함께 하겠습니다.</p>
+            
+            <p style="margin-top: 30px;">
+                당신을 응원합니다,<br/>
+                자기자비 여정 팀 💚
+            </p>
+        </body>
+        </html>
+        """
+        
+        attachments = []
+        if pdf_report_path:
+            attachments.append({
+                "type": "pdf",
+                "path": pdf_report_path,
+                "filename": f"{user_name}_자존감분석보고서.pdf"
+            })
+        
+        return {
+            "type": "24h_report",
+            "send_at": send_at.isoformat(),
+            "to": user_email,
+            "subject": subject,
+            "body_html": body_html,
+            "attachments": attachments
         }
     
     def save_schedule_to_json(self, schedule: Dict, output_path: str = "email_schedule.json"):

@@ -11,3 +11,10 @@
 {"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 3 시작] 사용자님, 공통 인간성 인식 - 나만이 아니야 🌟", "attachments": 0, "timestamp": "2026-02-07T00:10:10.416846"}
 {"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 4 시작] 사용자님, 안정적 자기가치 - 존재 그 자체로 🌟", "attachments": 0, "timestamp": "2026-02-07T00:10:11.780181"}
 {"success": true, "to": "ywamer2022@gmail.com", "subject": "[28일 완주!] 사용자님, 축하합니다! 🎉🏆", "attachments": 0, "timestamp": "2026-02-07T00:10:13.213094"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[자존감 진단 완료] 사용자님의 자기자비 여정이 시작됩니다 🌱", "attachments": 1, "timestamp": "2026-02-07T00:16:39.073945"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 1 시작] 사용자님, 자기자비 기초 - 자기비판 알아차리기 🌟", "attachments": 0, "timestamp": "2026-02-07T00:16:39.907208"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 2 시작] 사용자님, 완벽주의 내려놓기 - 80%의 용기 🌟", "attachments": 0, "timestamp": "2026-02-07T00:16:40.868627"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 3 시작] 사용자님, 공통 인간성 인식 - 나만이 아니야 🌟", "attachments": 0, "timestamp": "2026-02-07T00:16:41.794289"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 4 시작] 사용자님, 안정적 자기가치 - 존재 그 자체로 🌟", "attachments": 0, "timestamp": "2026-02-07T00:16:42.624407"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[자존감 분석 결과] 사용자님, 당신의 진단 결과를 확인하세요 📊", "attachments": 0, "timestamp": "2026-02-07T00:16:43.647501"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[28일 완주!] 사용자님, 축하합니다! 🎉🏆", "attachments": 0, "timestamp": "2026-02-07T00:16:44.794491"}
