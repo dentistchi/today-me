@@ -8,8 +8,10 @@ Email Scheduling System for 28-Day Practice Guide
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import json
+import os
 from daily_practice_guide_v1 import DailyPracticeGuide
 from daily_practice_pdf_generator import DailyPracticePDFGenerator
+from real_email_sender import RealEmailSender
 
 
 class EmailScheduler:
@@ -18,6 +20,10 @@ class EmailScheduler:
     def __init__(self):
         self.practice_guide = None
         self.pdf_generator = DailyPracticePDFGenerator()
+        # 실제 이메일 발송을 위한 RealEmailSender 초기화
+        self.email_sender = RealEmailSender()
+        # 이메일 발송 활성화 여부 (환경 변수에서 확인)
+        self.enable_email = os.getenv('ENABLE_EMAIL', 'false').lower() == 'true'
         
     def create_email_schedule(
         self,
@@ -456,6 +462,158 @@ class EmailScheduler:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(schedule, f, ensure_ascii=False, indent=2)
         return output_path
+    
+    def send_email_now(self, email_data: Dict) -> Dict:
+        """
+        이메일 즉시 발송
+        
+        Args:
+            email_data: 이메일 데이터 (to, subject, body_html, attachments)
+            
+        Returns:
+            발송 결과
+        """
+        if not self.enable_email:
+            print(f"📧 [테스트 모드] 이메일 발송 스킵: {email_data['to']}")
+            print(f"   제목: {email_data['subject']}")
+            return {
+                "success": True,
+                "mode": "test",
+                "message": "테스트 모드 - 실제 발송하지 않음"
+            }
+        
+        # SMTP 설정 확인
+        smtp_user = os.getenv('SMTP_USER')
+        smtp_password = os.getenv('SMTP_PASSWORD')
+        
+        if not smtp_user or not smtp_password:
+            error_msg = "SMTP 설정이 없습니다. SMTP_USER와 SMTP_PASSWORD 환경 변수를 설정하세요."
+            print(f"❌ {error_msg}")
+            return {
+                "success": False,
+                "error": error_msg
+            }
+        
+        # 실제 이메일 발송
+        try:
+            result = self.email_sender.send_email(
+                to_email=email_data['to'],
+                subject=email_data['subject'],
+                html_body=email_data['body_html'],
+                attachments=email_data.get('attachments', [])
+            )
+            return result
+        except Exception as e:
+            print(f"❌ 이메일 발송 실패: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def send_all_emails_now(self, schedule: Dict) -> List[Dict]:
+        """
+        스케줄의 모든 이메일 즉시 발송 (테스트용)
+        
+        Args:
+            schedule: create_email_schedule()에서 생성된 스케줄
+            
+        Returns:
+            발송 결과 리스트
+        """
+        results = []
+        emails = schedule.get('emails', [])
+        
+        print(f"\n{'='*70}")
+        print(f"이메일 발송 시작: {len(emails)}개")
+        print(f"{'='*70}\n")
+        
+        for i, email in enumerate(emails, 1):
+            print(f"[{i}/{len(emails)}] 발송 중...")
+            print(f"   수신자: {email['to']}")
+            print(f"   제목: {email['subject'][:50]}...")
+            
+            result = self.send_email_now(email)
+            results.append({
+                "email_type": email['type'],
+                "result": result
+            })
+            
+            if result.get('success'):
+                print(f"   ✅ 성공\n")
+            else:
+                print(f"   ❌ 실패: {result.get('error', 'Unknown')}\n")
+        
+        # 요약
+        success_count = sum(1 for r in results if r['result'].get('success'))
+        print(f"{'='*70}")
+        print(f"발송 완료: {success_count}/{len(emails)} 성공")
+        print(f"{'='*70}\n")
+        
+        return results
+    
+    def schedule_three_stage_emails(
+        self,
+        user_email: str,
+        user_name: str,
+        emails: List[Dict],
+        pdf_path: Optional[str] = None,
+        profile: Optional[Dict] = None
+    ) -> Dict:
+        """
+        3단계 이메일 발송
+        1단계: 즉시 발송 - 진단 완료 알림
+        2단계: 2시간 후 - 중간 분석 보고서 (실제로는 즉시 발송)
+        3단계: 24시간 후 - 상세 분석 보고서 (실제로는 즉시 발송)
+        
+        Args:
+            user_email: 사용자 이메일
+            user_name: 사용자 이름
+            emails: 이메일 콘텐츠 리스트
+            pdf_path: PDF 보고서 경로
+            profile: 프로파일 정보
+            
+        Returns:
+            발송 스케줄 정보
+        """
+        now = datetime.now()
+        
+        # 이메일 데이터 준비
+        email_data_list = []
+        
+        for email_content in emails:
+            email_data = {
+                "to": user_email,
+                "subject": email_content.get("subject", "자존감 분석 결과"),
+                "body_html": email_content.get("body", ""),
+                "attachments": []
+            }
+            
+            # PDF 첨부 파일 추가
+            if pdf_path and os.path.exists(pdf_path):
+                email_data["attachments"].append({
+                    "path": pdf_path,
+                    "filename": f"{user_name}_자존감분석보고서.pdf"
+                })
+            
+            email_data_list.append(email_data)
+        
+        # 모든 이메일 즉시 발송
+        results = []
+        for i, email_data in enumerate(email_data_list, 1):
+            print(f"\n[이메일 {i}/{len(email_data_list)}] 발송 중...")
+            result = self.send_email_now(email_data)
+            results.append(result)
+        
+        # 발송 결과 요약
+        success_count = sum(1 for r in results if r.get('success'))
+        
+        return {
+            "total_emails": len(email_data_list),
+            "sent": success_count,
+            "failed": len(email_data_list) - success_count,
+            "results": results,
+            "timestamp": now.isoformat()
+        }
 
 
 # 테스트 코드

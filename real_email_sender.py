@@ -43,7 +43,7 @@ class RealEmailSender:
         self.smtp_user = smtp_user or os.getenv('SMTP_USER')
         self.smtp_password = smtp_password or os.getenv('SMTP_PASSWORD')
         self.from_email = from_email or os.getenv('FROM_EMAIL', self.smtp_user)
-        self.from_name = from_name
+        self.from_name = from_name or os.getenv('FROM_NAME', '자기자비 여정')
         
         # 로깅
         self.log_file = "email_send_log.txt"

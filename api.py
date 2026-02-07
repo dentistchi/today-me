@@ -15,15 +15,34 @@ from typing import List, Optional, Dict
 from datetime import datetime
 from enum import Enum
 import json
+import os
+
+# .env 파일 로드
+def load_env():
+    """Load environment variables from .env file"""
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        print(f"✅ .env 파일 로드: {env_path}")
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip()
+    else:
+        print(f"⚠️  .env 파일 없음: {env_path}")
+        print("   SMTP 설정을 환경 변수로 지정하거나 .env 파일을 생성하세요.")
+
+# 환경 변수 로드 (앱 시작 시 실행)
+load_env()
 
 # Phase 1 모듈 임포트
 from careless_response_detector import CarelessResponseDetector, QualityCheckResult
 from response_style_corrector import ResponseStyleCorrector, CorrectionResult
 
 # 이메일 및 분석 모듈 임포트
-from email_scheduler import EmailScheduler, EmailConfig
+from email_scheduler import EmailScheduler
 from self_esteem_system import SelfEsteemSystem
-import os
 
 
 # ==================== FastAPI 초기화 ====================
@@ -47,9 +66,8 @@ app.add_middleware(
 detector = CarelessResponseDetector()
 corrector = ResponseStyleCorrector()
 
-# 이메일 스케줄러 초기화
-email_config = EmailConfig()
-email_scheduler = EmailScheduler(email_config)
+# 이메일 스케줄러 초기화 (EmailConfig 제거)
+email_scheduler = EmailScheduler()
 
 # 자존감 분석 시스템 초기화
 esteem_system = SelfEsteemSystem()
