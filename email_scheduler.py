@@ -11,6 +11,7 @@ import json
 import os
 from daily_practice_guide_v1 import DailyPracticeGuide
 from daily_practice_pdf_generator import DailyPracticePDFGenerator
+from weekly_pdf_generator import WeeklyPDFGenerator
 from real_email_sender import RealEmailSender
 
 
@@ -20,6 +21,7 @@ class EmailScheduler:
     def __init__(self):
         self.practice_guide = None
         self.pdf_generator = DailyPracticePDFGenerator()
+        self.weekly_pdf_generator = WeeklyPDFGenerator()
         # 실제 이메일 발송을 위한 RealEmailSender 초기화
         self.email_sender = RealEmailSender()
         # 이메일 발송 활성화 여부 (환경 변수에서 확인)
@@ -64,13 +66,14 @@ class EmailScheduler:
         # 이메일 스케줄 구성
         emails = []
         
-        # 1. 진단 완료 이메일 (즉시 발송)
+        # 1. 진단 완료 이메일 (개발자용, 즉시 발송)
         emails.append(self._create_diagnosis_complete_email(
             user_email=user_email,
             user_name=user_name,
             send_at=start_date,
             pdf_report_path=pdf_report_path,
-            daily_guide_pdf_path=daily_guide_pdf_path
+            daily_guide_pdf_path=daily_guide_pdf_path,
+            analysis_results=analysis_results
         ))
         
         # 2. Week 1 시작 리마인더 (Day 1, 시작일)
@@ -79,7 +82,9 @@ class EmailScheduler:
             user_name=user_name,
             week_num=1,
             send_at=start_date,
-            day_data=all_days[0]
+            day_data=all_days[0],
+            week_days=all_days[0:7],
+            start_date=start_date
         ))
         
         # 3. Week 2 시작 리마인더 (Day 8)
@@ -88,7 +93,9 @@ class EmailScheduler:
             user_name=user_name,
             week_num=2,
             send_at=start_date + timedelta(days=7),
-            day_data=all_days[7]
+            day_data=all_days[7],
+            week_days=all_days[7:14],
+            start_date=start_date + timedelta(days=7)
         ))
         
         # 4. Week 3 시작 리마인더 (Day 15)
@@ -97,7 +104,9 @@ class EmailScheduler:
             user_name=user_name,
             week_num=3,
             send_at=start_date + timedelta(days=14),
-            day_data=all_days[14]
+            day_data=all_days[14],
+            week_days=all_days[14:21],
+            start_date=start_date + timedelta(days=14)
         ))
         
         # 5. Week 4 시작 리마인더 (Day 22)
@@ -106,7 +115,9 @@ class EmailScheduler:
             user_name=user_name,
             week_num=4,
             send_at=start_date + timedelta(days=21),
-            day_data=all_days[21]
+            day_data=all_days[21],
+            week_days=all_days[21:28],
+            start_date=start_date + timedelta(days=21)
         ))
         
         # 6. 24시간 후 결과 리포트 (Day 2, +1일)
@@ -144,50 +155,92 @@ class EmailScheduler:
         user_name: str,
         send_at: datetime,
         pdf_report_path: Optional[str],
-        daily_guide_pdf_path: str
+        daily_guide_pdf_path: str,
+        analysis_results: Optional[Dict] = None
     ) -> Dict:
-        """진단 완료 이메일"""
-        subject = f"[자존감 진단 완료] {user_name}님의 자기자비 여정이 시작됩니다 🌱"
+        """진단 완료 이메일 (개발자용 구체적 리포트)"""
+        
+        # 개발자 이메일 (환경변수에서 가져오기)
+        developer_email = os.getenv('DEVELOPER_EMAIL', os.getenv('ADMIN_EMAIL', 'developer@example.com'))
+        
+        subject = f"[개발자 리포트] {user_email} 자존감 진단 완료"
+        
+        # 분석 결과 요약 생성
+        profile_summary = ""
+        if analysis_results:
+            profile = analysis_results.get('profile', {})
+            scores = profile.get('scores', {})
+            
+            profile_summary = f"""
+            <h3>📊 분석 결과 요약</h3>
+            <table style="border-collapse: collapse; width: 100%; margin: 10px 0;">
+                <tr style="background-color: #E8F8F5;">
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">측정 항목</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">점수</th>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">자존감 안정성</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{scores.get('esteem_stability', 0):.2f}</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td style="border: 1px solid #ddd; padding: 8px;">자기자비</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{scores.get('self_compassion', 0):.2f}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">성장 마인드셋</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{scores.get('growth_mindset', 0):.2f}</td>
+                </tr>
+                <tr style="background-color: #f9f9f9;">
+                    <td style="border: 1px solid #ddd; padding: 8px;">정서적 회복력</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{scores.get('emotional_resilience', 0):.2f}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">자기수용</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">{scores.get('self_acceptance', 0):.2f}</td>
+                </tr>
+            </table>
+            
+            <h3>🎯 프로파일 타입</h3>
+            <p><strong>{profile.get('esteem_type', 'N/A')}</strong></p>
+            
+            <h3>💪 감지된 강점</h3>
+            <ul>
+            """
+            
+            strengths = analysis_results.get('strengths', [])
+            for strength in strengths[:3]:  # 상위 3개만
+                profile_summary += f"<li><strong>{strength.get('name', '')}</strong>: {strength.get('detail', '')}</li>\n"
+            
+            profile_summary += "</ul>"
         
         body_html = f"""
         <html>
         <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #2C3E50;">안녕하세요, {user_name}님!</h2>
+            <h2 style="color: #2C3E50;">🔔 새로운 진단 완료 알림</h2>
             
-            <p>자존감 진단이 완료되었습니다. 용기 내어 자신을 돌아본 당신을 응원합니다. 🎉</p>
-            
-            <h3 style="color: #3498DB;">📊 첨부 파일</h3>
-            <ul>
-                <li><strong>자존감 분석 보고서 PDF</strong> - 당신의 현재 상태와 숨겨진 강점</li>
-                <li><strong>28일 매일 실천 가이드 PDF</strong> - 하루하루 변화를 만드는 구체적 실천법</li>
-            </ul>
-            
-            <h3 style="color: #3498DB;">🚀 다음 단계</h3>
-            <ol>
-                <li>첨부된 <strong>분석 보고서</strong>를 먼저 읽어주세요 (10-15분)</li>
-                <li><strong>28일 가이드</strong>를 다운로드하여 보관하세요</li>
-                <li>오늘부터 Day 1을 시작하세요!</li>
-            </ol>
-            
-            <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
-                <h4 style="color: #F39C12; margin-top: 0;">💡 28일 여정 안내</h4>
-                <p>
-                    <strong>Week 1:</strong> 자기자비 기초 (자기비판 알아차리기)<br/>
-                    <strong>Week 2:</strong> 완벽주의 내려놓기<br/>
-                    <strong>Week 3:</strong> 공통 인간성 인식 (나만이 아니야)<br/>
-                    <strong>Week 4:</strong> 안정적 자기가치 확립
-                </p>
+            <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+                <h3 style="color: #27AE60; margin-top: 0;">사용자 정보</h3>
+                <p><strong>이메일:</strong> {user_email}</p>
+                <p><strong>이름:</strong> {user_name}</p>
+                <p><strong>진단 완료 시각:</strong> {send_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
             </div>
             
-            <p>매주 월요일마다 그 주의 가이드를 리마인드 이메일로 보내드립니다.</p>
+            {profile_summary}
             
-            <p>완벽하지 않아도 괜찮습니다. 하루를 놓쳐도 다시 시작하면 됩니다.</p>
+            <h3>📎 첨부 파일</h3>
+            <ul>
+                <li>자존감 분석 보고서 PDF</li>
+                <li>28일 매일 실천 가이드 PDF</li>
+            </ul>
             
-            <p><strong>중요한 것은 방향입니다. 당신은 이미 첫 걸음을 내디뎠습니다.</strong></p>
+            <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
+                <p><strong>💡 참고:</strong> 이 이메일은 개발자/관리자에게만 발송됩니다. 
+                사용자에게는 별도의 7개 이메일이 발송됩니다.</p>
+            </div>
             
             <p style="margin-top: 30px;">
-                응원합니다,<br/>
-                자기자비 여정 팀 💚
+                자동 생성 리포트<br/>
+                자기자비 여정 시스템
             </p>
         </body>
         </html>
@@ -209,7 +262,7 @@ class EmailScheduler:
         return {
             "type": "diagnosis_complete",
             "send_at": send_at.isoformat(),
-            "to": user_email,
+            "to": developer_email,  # 개발자에게 발송
             "subject": subject,
             "body_html": body_html,
             "attachments": attachments
@@ -221,9 +274,11 @@ class EmailScheduler:
         user_name: str,
         week_num: int,
         send_at: datetime,
-        day_data: Dict
+        day_data: Dict,
+        week_days: List[Dict],
+        start_date: datetime
     ) -> Dict:
-        """주간 시작 리마인더 이메일"""
+        """주간 시작 리마인더 이메일 (마인드셋 + 주간 PDF 첨부)"""
         week_themes = {
             1: "자기자비 기초 - 자기비판 알아차리기",
             2: "완벽주의 내려놓기 - 80%의 용기",
@@ -231,7 +286,15 @@ class EmailScheduler:
             4: "안정적 자기가치 - 존재 그 자체로"
         }
         
+        week_mindsets = {
+            1: "\"나는 나를 비판하는 목소리를 알아차릴 수 있다.\"",
+            2: "\"80%로도 충분히 가치 있다.\"",
+            3: "\"힘들어하는 건 나만이 아니다.\"",
+            4: "\"나는 무언가를 성취해서가 아니라, 존재 그 자체로 가치 있다.\""
+        }
+        
         theme = week_themes.get(week_num, "")
+        mindset = week_mindsets.get(week_num, "")
         subject = f"[Week {week_num} 시작] {user_name}님, {theme} 🌟"
         
         body_html = f"""
@@ -243,25 +306,32 @@ class EmailScheduler:
                 <h3 style="color: #27AE60; margin-top: 0;">이번 주 테마: {theme}</h3>
             </div>
             
-            <h3 style="color: #3498DB;">📅 Day {day_data.get('day')}: {day_data.get('title', '')}</h3>
-            
-            <p><strong>🌅 오늘의 아침 의식:</strong></p>
-            <p style="background-color: #FEF5E7; padding: 10px; border-radius: 5px; font-style: italic;">
-                "{day_data.get('morning_ritual', '')}"
-            </p>
-            
-            <p><strong>📖 오늘의 핵심 실천:</strong></p>
-            <p>{day_data.get('core_practice', {}).get('name', '')} 
-               ({day_data.get('core_practice', {}).get('duration', '')})</p>
-            
-            <p><strong>✅ 오늘의 작은 승리:</strong></p>
-            <p>{day_data.get('micro_win', '')}</p>
-            
-            <div style="background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 0;"><strong>💡 Tip:</strong> 28일 가이드 PDF를 참고하여 오늘의 실천을 확인하세요!</p>
+            <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
+                <h4 style="color: #F39C12; margin-top: 0;">💡 이번 주의 핵심 마인드셋</h4>
+                <p style="font-size: 16px; font-style: italic; font-weight: bold; text-align: center;">
+                    {mindset}
+                </p>
             </div>
             
-            <p>완벽하지 않아도 괜찮습니다. 오늘 하루만 집중하세요.</p>
+            <h3 style="color: #3498DB;">📎 첨부 파일</h3>
+            <p><strong>Week {week_num} 실천 가이드 PDF</strong> - 이번 주 7일 치 상세 플랜이 담겨 있습니다.</p>
+            <ul>
+                <li>매일의 마인드셋</li>
+                <li>핵심 실천 방법</li>
+                <li>예상되는 저항과 돌파 전략</li>
+                <li>작은 승리 목표</li>
+            </ul>
+            
+            <h3 style="color: #3498DB;">🎯 시작하기</h3>
+            <p>첨부된 PDF를 다운로드하여 이번 주 계획을 확인하세요. 
+            완벽하지 않아도 괜찮습니다. 하루에 하나씩, 천천히 진행하세요.</p>
+            
+            <div style="background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>💡 Tip:</strong> PDF를 프린트하거나 스마트폰에 저장하여 
+                언제든 참고할 수 있도록 하세요!</p>
+            </div>
+            
+            <p><strong>중요한 것은 완벽함이 아니라 방향입니다. 당신은 이미 잘하고 있습니다.</strong></p>
             
             <p style="margin-top: 30px;">
                 당신을 응원합니다,<br/>
@@ -271,13 +341,26 @@ class EmailScheduler:
         </html>
         """
         
+        # 주간 PDF 생성
+        week_pdf_path = self.weekly_pdf_generator.generate_weekly_pdf(
+            user_name=user_name,
+            week_num=week_num,
+            week_days=week_days,
+            start_date=send_at,
+            output_filename=f"week{week_num}_guide_{user_name}.pdf"
+        )
+        
         return {
             "type": f"week_{week_num}_start",
             "send_at": send_at.isoformat(),
             "to": user_email,
             "subject": subject,
             "body_html": body_html,
-            "attachments": []
+            "attachments": [{
+                "type": "pdf",
+                "path": week_pdf_path,
+                "filename": f"Week{week_num}_{user_name}_실천가이드.pdf"
+            }]
         }
     
     def _create_completion_email(

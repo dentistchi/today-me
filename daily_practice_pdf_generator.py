@@ -91,19 +91,17 @@ class DailyPracticePDFGenerator:
             spaceAfter=10
         ))
         
-        # 아침 의식 스타일
+        # 아침 의식 스타일 (배경 제거, Table로 구현)
         self.styles.add(ParagraphStyle(
             name='MorningRitual',
             parent=self.styles['BodyText'],
             fontName='NanumGothicBold',
             fontSize=12,
-            textColor=colors.HexColor('#F39C12'),
+            textColor=colors.HexColor('#2C3E50'),
             leading=18,
-            alignment=TA_CENTER,
-            spaceBefore=10,
-            spaceAfter=15,
-            borderPadding=10,
-            backColor=colors.HexColor('#FEF5E7')
+            alignment=TA_LEFT,
+            spaceBefore=5,
+            spaceAfter=5
         ))
         
         # 작은 승리 스타일
@@ -296,15 +294,28 @@ class DailyPracticePDFGenerator:
                 elements.append(retest_box)
                 elements.append(Spacer(1, 0.5*cm))
         
-        # 아침 의식
+        # 아침 의식 (Table로 노란색 배경 구현하여 겹침 방지)
         if 'morning_ritual' in day_data:
             section = Paragraph("🌅 아침 의식", self.styles['SectionTitle'])
             elements.append(section)
             
             ritual_text = day_data['morning_ritual']
             ritual = Paragraph(ritual_text, self.styles['MorningRitual'])
-            elements.append(ritual)
-            elements.append(Spacer(1, 0.3*cm))
+            
+            # Table로 배경색 적용하여 겹침 방지
+            ritual_table = Table(
+                [[ritual]],
+                colWidths=[15*cm]
+            )
+            ritual_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#FEF5E7')),
+                ('PADDING', (0, 0), (-1, -1), 12),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#F39C12')),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP')
+            ]))
+            
+            elements.append(ritual_table)
+            elements.append(Spacer(1, 0.4*cm))
         
         # 핵심 실천
         if 'core_practice' in day_data:
