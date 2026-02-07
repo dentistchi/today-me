@@ -186,13 +186,13 @@ class EnhancedPDFGenerator:
             rightIndent=30
         ))
         
-        # 하이라이트 박스
+        # 하이라이트 박스 (글씨가 잘 보이도록 어두운 색상)
         self.styles.add(ParagraphStyle(
             name='HighlightBox',
             fontName=self.korean_font,
             fontSize=12,
             leading=18,
-            textColor=colors.HexColor('#FFFFFF'),
+            textColor=colors.HexColor('#2C3E50'),  # 어두운 회색으로 변경 (흰색 배경에서 잘 보임)
             alignment=TA_LEFT,
             leftIndent=15,
             rightIndent=15,
