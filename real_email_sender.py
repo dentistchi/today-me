@@ -102,13 +102,27 @@ class RealEmailSender:
                 for attachment in attachments:
                     if os.path.exists(attachment['path']):
                         with open(attachment['path'], 'rb') as f:
-                            part = MIMEBase('application', 'octet-stream')
+                            # PDF 파일은 명시적으로 application/pdf 타입 사용
+                            filename = attachment['filename']
+                            if filename.lower().endswith('.pdf'):
+                                part = MIMEBase('application', 'pdf')
+                            else:
+                                part = MIMEBase('application', 'octet-stream')
+                            
                             part.set_payload(f.read())
                             encoders.encode_base64(part)
+                            
+                            # RFC 2231 인코딩을 사용한 한글 파일명 처리
+                            from email.header import Header
+                            
+                            # 파일명을 UTF-8로 인코딩하고 RFC 2231 형식으로 설정
+                            encoded_filename = filename.encode('utf-8')
                             part.add_header(
                                 'Content-Disposition',
-                                f"attachment; filename={attachment['filename']}"
+                                'attachment',
+                                filename=('utf-8', '', filename)
                             )
+                            
                             msg.attach(part)
             
             # SMTP 서버 연결 및 발송
