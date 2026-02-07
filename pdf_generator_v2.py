@@ -134,39 +134,41 @@ class EnhancedPDFGenerator:
             leading=22
         ))
         
-        # 섹션 제목 (Part 1, Part 2...)
+        # 섹션 제목 (Part 1, Part 2...) - keepWithNext 추가
         self.styles.add(ParagraphStyle(
             name='SectionTitle',
             fontName=self.korean_font_bold,
-            fontSize=24,
+            fontSize=22,
             textColor=self.colors['primary'],
             alignment=TA_LEFT,
-            spaceAfter=15,
-            spaceBefore=20,
-            leading=30
+            spaceAfter=10,
+            spaceBefore=8,
+            leading=28,
+            keepWithNext=True
         ))
         
-        # 서브섹션 제목
+        # 서브섹션 제목 - keepWithNext 추가
         self.styles.add(ParagraphStyle(
             name='SubsectionTitle',
             fontName=self.korean_font_bold,
-            fontSize=16,
+            fontSize=15,
             textColor=self.colors['secondary'],
             alignment=TA_LEFT,
-            spaceAfter=12,
-            spaceBefore=15,
-            leading=20
+            spaceAfter=8,
+            spaceBefore=10,
+            leading=18,
+            keepWithNext=True
         ))
         
-        # 본문
+        # 본문 (여백 최소화)
         self.styles.add(ParagraphStyle(
             name='KoreanBody',
             fontName=self.korean_font,
             fontSize=11,
-            leading=18,
+            leading=16,
             textColor=colors.HexColor('#2C3E50'),
             alignment=TA_JUSTIFY,
-            spaceAfter=12,
+            spaceAfter=8,
             firstLineIndent=0
         ))
         
@@ -209,16 +211,16 @@ class EnhancedPDFGenerator:
             spaceAfter=3
         ))
         
-        # 리스트 항목
+        # 리스트 항목 - 간격 축소
         self.styles.add(ParagraphStyle(
             name='ListItem',
             fontName=self.korean_font,
             fontSize=11,
-            leading=16,
+            leading=15,
             textColor=colors.HexColor('#2C3E50'),
             alignment=TA_LEFT,
             leftIndent=20,
-            spaceAfter=8
+            spaceAfter=6
         ))
     
     def add_reference(self, citation: str, url: str = "") -> int:
@@ -354,7 +356,7 @@ class EnhancedPDFGenerator:
 이 보고서는 당신이 스스로에게 어떻게 말하는지, 어떤 패턴이 자존감을 흔드는지, 
 그리고 당신 안에 이미 존재하는 강점은 무엇인지를 보여줍니다.
 <br/><br/>
-15페이지에 걸쳐, 우리는 함께 당신의 자존감 지도를 그릴 것입니다.
+우리는 함께 당신의 자존감 지도를 그릴 것입니다.
 """
         
         body = Paragraph(opening_text, self.styles['KoreanBody'])
@@ -369,21 +371,24 @@ class EnhancedPDFGenerator:
         self.story.append(PageBreak())
     
     def _create_part1_dimensions(self):
-        """Part 1: 5차원 분석"""
+        """Part 1: 5차원 분석 - 한 페이지에 모두 배치"""
+        # 모든 요소를 리스트에 담아서 KeepTogether로 묶기
+        elements = []
+        
         # 제목
         title = Paragraph("Part 1. 당신의 자존감 5차원 분석", self.styles['SectionTitle'])
-        self.story.append(title)
-        self.story.append(Spacer(1, 5*mm))
+        elements.append(title)
+        elements.append(Spacer(1, 3*mm))
         
         # 설명
         intro = Paragraph(
             "자존감은 단일 숫자가 아닙니다. 5개의 차원이 상호작용하며 당신만의 패턴을 만듭니다.",
             self.styles['KoreanBody']
         )
-        self.story.append(intro)
-        self.story.append(Spacer(1, 8*mm))
+        elements.append(intro)
+        elements.append(Spacer(1, 4*mm))
         
-        # 레이더 차트
+        # 레이더 차트 (크기 축소)
         dimensions = self.data['scores'].get('dimensions', {
             '자기수용': 3.2,
             '자기가치': 2.8,
@@ -393,26 +398,27 @@ class EnhancedPDFGenerator:
         })
         
         chart_buffer = self._create_radar_chart(dimensions)
-        chart_img = RLImage(chart_buffer, width=120*mm, height=120*mm)
-        self.story.append(chart_img)
-        self.story.append(Spacer(1, 8*mm))
+        chart_img = RLImage(chart_buffer, width=100*mm, height=100*mm)
+        elements.append(chart_img)
+        elements.append(Spacer(1, 4*mm))
         
-        # 차원별 설명
+        # 차원별 설명 - 간결하게
         subtitle = Paragraph("각 차원의 의미", self.styles['SubsectionTitle'])
-        self.story.append(subtitle)
+        elements.append(subtitle)
+        elements.append(Spacer(1, 2*mm))
         
         for dim_name, score in dimensions.items():
-            dim_text = f"<b>{dim_name}</b>: {score:.1f}/5.0<br/>"
+            dim_text = f"<b>{dim_name}</b> ({score:.1f}/5.0): "
             if score < 2.5:
-                dim_text += "→ 이 영역에서 자기비판이 강하게 작동합니다."
+                dim_text += "자기비판이 강하게 작동합니다."
             elif score < 3.5:
-                dim_text += "→ 발전 가능성이 큰 영역입니다."
+                dim_text += "발전 가능성이 큰 영역입니다."
             else:
-                dim_text += "→ 당신의 강점 영역입니다."
+                dim_text += "당신의 강점 영역입니다."
             
             para = Paragraph(dim_text, self.styles['ListItem'])
-            self.story.append(para)
-            self.story.append(Spacer(1, 3*mm))
+            elements.append(para)
+            elements.append(Spacer(1, 1.5*mm))
         
         # 참고문헌 추가
         ref1 = self.add_reference(
@@ -426,9 +432,11 @@ class EnhancedPDFGenerator:
         
         ref_text = f"<sup>{ref1}</sup> <sup>{ref2}</sup>"
         ref_para = Paragraph(ref_text, self.styles['Reference'])
-        self.story.append(Spacer(1, 5*mm))
-        self.story.append(ref_para)
+        elements.append(Spacer(1, 2*mm))
+        elements.append(ref_para)
         
+        # KeepTogether로 묶어서 페이지 분리 방지
+        self.story.append(KeepTogether(elements))
         self.story.append(PageBreak())
     
     def _create_part2_patterns(self):
@@ -847,42 +855,58 @@ class EnhancedPDFGenerator:
         self.story.append(PageBreak())
     
     def _create_closing_letter(self):
-        """마지막 편지"""
+        """마지막 편지 - 매주 이메일 안내 및 응원"""
         title = Paragraph(f"{self.user_name}님,", self.styles['SectionTitle'])
         self.story.append(title)
-        self.story.append(Spacer(1, 5*mm))
+        self.story.append(Spacer(1, 3*mm))
         
         closing_text = """
-15페이지를 함께 걸어왔습니다.
-<br/><br/>
-당신은 이제 당신의 패턴을 압니다. 
+이제 당신은 당신의 패턴을 압니다. 
 당신의 강점도 압니다.
 그리고 무엇을 연습해야 하는지도 압니다.
 <br/><br/>
-<b>4주 후 재검사를 통해 변화를 확인하세요.</b>
+<b>이제부터가 진짜 시작입니다.</b>
 <br/><br/>
-같은 50개 질문이지만, 당신의 응답은 달라져 있을 것입니다.
+앞으로 4주 동안, 매주 월요일 아침마다 이메일을 받게 됩니다.
+그 이메일에는 그 주에 실천할 구체적인 가이드가 담겨있습니다.
+<br/><br/>
+하루 5-10분, 매일 작은 실천을 함께 해봅시다.
+완벽하지 않아도 괜찮습니다. 놓치는 날이 있어도 괜찮습니다.
+중요한 것은 다시 시작하는 것입니다.
+<br/><br/>
+<b>Week 1 (다음 월요일):</b> 자기자비 기초 - 자기비판을 알아차리고, 친구에게 말하듯 자신에게 말하기<br/>
+<b>Week 2:</b> 완벽주의 내려놓기 - 80%의 용기<br/>
+<b>Week 3:</b> 공통 인간성 인식 - 당신만 힘든 게 아닙니다<br/>
+<b>Week 4:</b> 안정적 자기가치 - 존재 자체로 가치 있음을 받아들이기<br/>
+<br/><br/>
+4주 후, 당신은 달라져 있을 것입니다.
+같은 50개 질문이지만, 당신의 응답은 분명 달라져 있을 것입니다.
+그때 재검사 링크를 이메일로 보내드리겠습니다.
 """
         
         body = Paragraph(closing_text, self.styles['KoreanBody'])
         self.story.append(body)
-        self.story.append(Spacer(1, 10*mm))
+        self.story.append(Spacer(1, 8*mm))
         
-        # 재검사 링크
-        retest_link = self.data.get('retest_link', 'https://example.com/retest')
-        retest_box_text = f"""
-<b>🔗 재검사 링크:</b><br/>
-{retest_link}<br/>
+        # 응원 메시지 박스
+        encouragement_text = """
+<b>💚 우리가 함께 합니다</b><br/>
 <br/>
-4주 후 이 링크를 클릭하여 재검사를 진행하세요.
-Before & After 비교 리포트를 받게 됩니다.
+매주 월요일 아침, 당신의 이메일함에서 우리를 만나세요.<br/>
+힘들 때는 이 보고서로 돌아오세요.<br/>
+당신은 혼자가 아닙니다.<br/>
+<br/>
+변화는 천천히 찾아옵니다. 조급해하지 마세요.<br/>
+지금 이 순간, 이 보고서를 읽고 있는 당신이<br/>
+이미 변화의 첫 걸음을 내디뎠습니다.<br/>
+<br/>
+<b>우리는 당신을 응원합니다. 당신은 할 수 있습니다. 💪</b>
 """
         
-        # 하이라이트 박스
-        retest_para = Paragraph(retest_box_text, self.styles['HighlightBox'])
+        encouragement_para = Paragraph(encouragement_text, self.styles['HighlightBox'])
         
         # 박스 배경
-        box_table = Table([[retest_para]], colWidths=[160*mm])
+        box_table = Table([[encouragement_para]], colWidths=[160*mm])
         box_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), self.colors['accent']),
             ('BORDER', (0, 0), (-1, -1), 2, self.colors['primary']),
@@ -891,11 +915,11 @@ Before & After 비교 리포트를 받게 됩니다.
         ]))
         
         self.story.append(box_table)
-        self.story.append(Spacer(1, 15*mm))
+        self.story.append(Spacer(1, 12*mm))
         
         # 마지막 인사
         farewell = Paragraph(
-            "당신의 성장을 응원합니다.<br/>자존감 성장 프로그램 팀",
+            "당신의 성장을 응원합니다.<br/>자존감 성장 프로그램 팀 💚",
             self.styles['Quote']
         )
         self.story.append(farewell)
