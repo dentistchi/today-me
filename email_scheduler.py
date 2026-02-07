@@ -463,6 +463,12 @@ class EmailScheduler:
             json.dump(schedule, f, ensure_ascii=False, indent=2)
         return output_path
     
+    def shutdown(self):
+        """스케줄러 종료 (API 서버 shutdown 시 호출)"""
+        print("EmailScheduler shutdown called")
+        # 필요한 정리 작업 수행
+        pass
+    
     def send_email_now(self, email_data: Dict) -> Dict:
         """
         이메일 즉시 발송
@@ -555,7 +561,7 @@ class EmailScheduler:
         self,
         user_email: str,
         user_name: str,
-        emails: List[Dict],
+        emails: Dict,  # Dict로 변경 (basic, intermediate, detailed 키 포함)
         pdf_path: Optional[str] = None,
         profile: Optional[Dict] = None
     ) -> Dict:
@@ -568,7 +574,7 @@ class EmailScheduler:
         Args:
             user_email: 사용자 이메일
             user_name: 사용자 이름
-            emails: 이메일 콘텐츠 리스트
+            emails: 이메일 콘텐츠 딕셔너리 (basic, intermediate, detailed)
             pdf_path: PDF 보고서 경로
             profile: 프로파일 정보
             
@@ -580,32 +586,56 @@ class EmailScheduler:
         # 이메일 데이터 준비
         email_data_list = []
         
-        for email_content in emails:
-            email_data = {
-                "to": user_email,
-                "subject": email_content.get("subject", "자존감 분석 결과"),
-                "body_html": email_content.get("body", ""),
-                "attachments": []
-            }
-            
-            # PDF 첨부 파일 추가
-            if pdf_path and os.path.exists(pdf_path):
-                email_data["attachments"].append({
-                    "path": pdf_path,
-                    "filename": f"{user_name}_자존감분석보고서.pdf"
-                })
-            
-            email_data_list.append(email_data)
+        # emails가 딕셔너리인 경우 처리
+        if isinstance(emails, dict):
+            for stage_name, email_content in emails.items():
+                email_data = {
+                    "to": user_email,
+                    "subject": email_content.get("subject", "자존감 분석 결과"),
+                    "body_html": email_content.get("body", ""),
+                    "attachments": [],
+                    "stage": stage_name
+                }
+                
+                # PDF 첨부 파일 추가 (detailed 단계에만)
+                if stage_name == "detailed" and pdf_path and os.path.exists(pdf_path):
+                    email_data["attachments"].append({
+                        "path": pdf_path,
+                        "filename": f"{user_name}_자존감분석보고서.pdf"
+                    })
+                
+                email_data_list.append(email_data)
+        else:
+            # 리스트인 경우 (이전 방식 호환)
+            for email_content in emails:
+                email_data = {
+                    "to": user_email,
+                    "subject": email_content.get("subject", "자존감 분석 결과"),
+                    "body_html": email_content.get("body", ""),
+                    "attachments": []
+                }
+                
+                if pdf_path and os.path.exists(pdf_path):
+                    email_data["attachments"].append({
+                        "path": pdf_path,
+                        "filename": f"{user_name}_자존감분석보고서.pdf"
+                    })
+                
+                email_data_list.append(email_data)
         
         # 모든 이메일 즉시 발송
         results = []
         for i, email_data in enumerate(email_data_list, 1):
-            print(f"\n[이메일 {i}/{len(email_data_list)}] 발송 중...")
+            stage = email_data.get('stage', f'email_{i}')
+            print(f"\n[{stage}] 발송 중...")
             result = self.send_email_now(email_data)
-            results.append(result)
+            results.append({
+                "stage": stage,
+                "result": result
+            })
         
         # 발송 결과 요약
-        success_count = sum(1 for r in results if r.get('success'))
+        success_count = sum(1 for r in results if r.get('result', {}).get('success'))
         
         return {
             "total_emails": len(email_data_list),
