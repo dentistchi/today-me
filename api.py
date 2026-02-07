@@ -266,14 +266,28 @@ async def assess_responses(request: AssessmentRequest):
             print(traceback.format_exc())
             pdf_path = None
         
-        # Step 4: 3단계 이메일 예약 발송
-        email_schedule = email_scheduler.schedule_three_stage_emails(
+        # Step 4: 7개 이메일 스케줄 생성 및 발송
+        from datetime import datetime, timedelta
+        
+        # 시작 날짜를 내일로 설정 (Day 1)
+        start_date = datetime.now() + timedelta(days=1)
+        start_date = start_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        
+        # 재검사 링크 (4주 후)
+        retest_link = "https://yoursite.com/retest"
+        
+        # 7개 이메일 스케줄 생성
+        email_schedule_full = email_scheduler.create_email_schedule(
             user_email=request.user_id,
             user_name=analysis_results['profile']['esteem_type'],
-            emails=analysis_results['emails'],
-            pdf_path=pdf_path,  # 생성된 PDF 경로
-            profile=analysis_results['profile']  # 개발자 알림용 프로파일 정보
+            analysis_results=analysis_results,
+            start_date=start_date,
+            retest_link=retest_link,
+            pdf_report_path=pdf_path
         )
+        
+        # 7개 이메일 즉시 발송
+        email_schedule = email_scheduler.send_all_emails_now(email_schedule_full)
         
         # 경고 메시지 생성
         status = "success"
