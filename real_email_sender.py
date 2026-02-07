@@ -15,6 +15,21 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import json
 
+# .env 파일 로드
+def load_env():
+    """Load environment variables from .env file"""
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip()
+
+# 환경 변수 로드
+load_env()
+
 
 class RealEmailSender:
     """실제 이메일 발송 클래스"""
