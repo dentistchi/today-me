@@ -436,11 +436,15 @@ function setFormData() {
 function getAPIBaseURL() {
     const hostname = window.location.hostname;
     
-    // 샌드박스 환경 감지
+    // 샌드박스 환경 감지 (예: 8000-i2fafcy2c1o1c156g213u-b9b802c4.sandbox.novita.ai)
     if (hostname.includes('sandbox.novita.ai')) {
-        // 현재 URL의 포트를 8001로 변경
-        const currentPort = window.location.port || '8000';
-        return window.location.protocol + '//' + hostname.replace(currentPort, '8001');
+        // 호스트명의 첫 번째 부분(포트 번호)을 8001로 변경
+        const parts = hostname.split('-');
+        if (parts.length > 0 && parts[0].match(/^\d+$/)) {
+            parts[0] = '8001';
+            const newHostname = parts.join('-');
+            return window.location.protocol + '//' + newHostname;
+        }
     }
     
     // 로컬 개발
