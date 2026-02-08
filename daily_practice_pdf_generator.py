@@ -235,7 +235,7 @@ class DailyPracticePDFGenerator:
         <para alignment="center">
         <b>환영합니다!</b><br/><br/>
         28일 동안 매일 작은 실천을 통해<br/>
-        자기자비를 배우는 여정에 함께합니다.<br/><br/>
+        자기자비를 배우는 여정에 <b>bty Training Team이 함께합니다.</b><br/><br/>
         완벽하지 않아도 괜찮습니다.<br/>
         하루를 놓쳐도 다시 시작하면 됩니다.<br/><br/>
         중요한 것은 방향입니다.<br/>
