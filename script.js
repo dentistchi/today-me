@@ -1,5 +1,8 @@
 'use strict';
 
+// 스크립트 로드 확인
+console.log('✅ script.js 로드됨');
+
 // ========== 질문 데이터베이스 ==========
 const questionDatabase = {
     // Part 1: 핵심 자존감 (RSES Core) - 가중치 30%
@@ -434,30 +437,39 @@ function setFormData() {
 // 로컬: localhost:8001
 // 프로덕션 (Cloudflare Pages): Functions API 사용
 function getAPIBaseURL() {
+    console.log('🔍 getAPIBaseURL() 호출됨');
     const hostname = window.location.hostname;
+    console.log('   hostname:', hostname);
+    console.log('   protocol:', window.location.protocol);
     
     // 샌드박스 환경 감지 (예: 8000-i2fafcy2c1o1c156g213u-b9b802c4.sandbox.novita.ai)
     if (hostname.includes('sandbox.novita.ai')) {
+        console.log('   → 샌드박스 환경 감지');
         // 호스트명의 첫 번째 부분(포트 번호)을 8001로 변경
         const parts = hostname.split('-');
+        console.log('   parts:', parts);
         if (parts.length > 0 && parts[0].match(/^\d+$/)) {
             parts[0] = '8001';
             const newHostname = parts.join('-');
-            return window.location.protocol + '//' + newHostname;
+            const apiUrl = window.location.protocol + '//' + newHostname;
+            console.log('   → API URL:', apiUrl);
+            return apiUrl;
         }
     }
     
     // 로컬 개발
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        console.log('   → 로컬 환경 감지');
         return 'http://localhost:8001';
     }
     
     // 프로덕션 (Cloudflare Pages)
+    console.log('   → 프로덕션 환경');
     return window.location.origin;
 }
 
 const API_BASE_URL = getAPIBaseURL();
-console.log('API Base URL:', API_BASE_URL);
+console.log('✅ API Base URL 설정 완료:', API_BASE_URL);
 
 // ========== 폼 제출 처리 ==========
 document.addEventListener('DOMContentLoaded', function() {

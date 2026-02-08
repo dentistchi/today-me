@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>JavaScript 테스트</title>
+</head>
+<body>
+    <h1>JavaScript 테스트 페이지</h1>
+    <p id="message">JavaScript가 실행되지 않았습니다.</p>
+    
+    <script>
+        console.log('✅ 테스트 스크립트 실행됨');
+        document.getElementById('message').textContent = 'JavaScript가 정상적으로 실행되었습니다!';
+        document.getElementById('message').style.color = 'green';
+        
+        // API URL 테스트
+        const hostname = window.location.hostname;
+        console.log('hostname:', hostname);
+        
+        if (hostname.includes('sandbox.novita.ai')) {
+            const parts = hostname.split('-');
+            console.log('parts:', parts);
+            if (parts.length > 0 && parts[0].match(/^\d+$/)) {
+                parts[0] = '8001';
+                const newHostname = parts.join('-');
+                const apiUrl = window.location.protocol + '//' + newHostname;
+                console.log('API URL:', apiUrl);
+                
+                document.body.innerHTML += '<h2>API URL: ' + apiUrl + '</h2>';
+            }
+        }
+    </script>
+</body>
+</html>
