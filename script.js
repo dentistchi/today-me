@@ -428,6 +428,33 @@ function setFormData() {
     document.getElementById('form-answers').value = JSON.stringify(answers);
 }
 
+// ========== API 설정 ==========
+// API 서버 URL 자동 감지
+// 샌드박스: 포트 8001 사용
+// 로컬: localhost:8001
+// 프로덕션 (Cloudflare Pages): Functions API 사용
+function getAPIBaseURL() {
+    const hostname = window.location.hostname;
+    
+    // 샌드박스 환경 감지
+    if (hostname.includes('sandbox.novita.ai')) {
+        // 현재 URL의 포트를 8001로 변경
+        const currentPort = window.location.port || '8000';
+        return window.location.protocol + '//' + hostname.replace(currentPort, '8001');
+    }
+    
+    // 로컬 개발
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'http://localhost:8001';
+    }
+    
+    // 프로덕션 (Cloudflare Pages)
+    return window.location.origin;
+}
+
+const API_BASE_URL = getAPIBaseURL();
+console.log('API Base URL:', API_BASE_URL);
+
 // ========== 폼 제출 처리 ==========
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('email-form');
@@ -452,23 +479,50 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerText = '분석 보고서 생성 중...';
             
-            // Google Apps Script URL 사용 (HTML form의 action 속성)
-            fetch(form.action, {
+            // API 서버로 데이터 전송
+            const requestData = {
+                user_id: emailValue,
+                responses: answers,
+                response_times: responseTimes,
+                reverse_items: [2, 4, 7, 8, 9, 13, 14, 15, 19, 20, 21]  // Rosenberg 역문항
+            };
+            
+            console.log('API 요청:', `${API_BASE_URL}/api/assess`);
+            console.log('요청 데이터:', requestData);
+            
+            fetch(`${API_BASE_URL}/api/assess`, {
                 method: 'POST',
-                body: new FormData(form),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('API 응답 상태:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                // Google Apps Script 응답 처리 ({"result":"success"})
-                if (data.result === 'success') {
+                console.log('API 응답 데이터:', data);
+                
+                // 응답 성공
+                if (data.status === 'success' || data.status === 'warning') {
                     showPage('thank-you-page');
+                } else if (data.status === 'invalid') {
+                    alert(data.message || '응답 품질이 낮습니다. 천천히 다시 응답해주세요.');
+                    // 필요시 처음부터 다시 시작
+                    if (confirm('처음부터 다시 시작하시겠습니까?')) {
+                        restartTest();
+                    }
                 } else {
                     alert('오류가 발생했습니다. 다시 시도해주세요.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                alert(`서버 연결에 실패했습니다.\n\n상세: ${error.message}\n\n잠시 후 다시 시도해주세요.`);
             })
             .finally(() => {
                 // 버튼 상태 복구
