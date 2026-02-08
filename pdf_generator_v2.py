@@ -919,7 +919,7 @@ class EnhancedPDFGenerator:
         
         # 마지막 인사
         farewell = Paragraph(
-            "당신의 성장을 응원합니다.<br/>자존감 성장 프로그램 팀 💚",
+            "당신의 성장을 응원합니다.<br/>bty Training Team 💚",
             self.styles['Quote']
         )
         self.story.append(farewell)

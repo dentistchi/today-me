@@ -700,7 +700,7 @@ Before & After 비교 리포트를 받게 됩니다.<br/>
         self.story.append(Spacer(1, 15*mm))
         
         farewell = Paragraph(
-            "당신의 성장을 응원합니다.<br/>자존감 성장 프로그램 팀",
+            "당신의 성장을 응원합니다.<br/>bty Training Team",
             self.styles['Quote']
         )
         self.story.append(farewell)

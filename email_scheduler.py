@@ -203,11 +203,15 @@ class EmailScheduler:
             
             <p>매주 월요일마다 그 주의 실천 가이드를 보내드립니다.</p>
             
-            <p><strong>완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.</strong></p>
+            <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+                <p style="margin: 0;"><strong>💚 응원 메시지</strong></p>
+                <p style="margin: 5px 0 0 0;">완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.<br/>
+                매주 월요일마다 실천 가이드를 보내드리며, 당신의 여정을 함께하겠습니다.</p>
+            </div>
             
             <p style="margin-top: 30px;">
                 24시간 후에 다시 만나요!<br/>
-                자기자비 여정 팀 💚
+                bty Training Team 💚
             </p>
         </body>
         </html>
@@ -306,7 +310,7 @@ class EmailScheduler:
             
             <p style="margin-top: 30px;">
                 당신을 응원합니다,<br/>
-                자기자비 여정 팀 💚
+                bty Training Team 💚
             </p>
         </body>
         </html>
@@ -425,7 +429,7 @@ class EmailScheduler:
             
             <p style="margin-top: 40px; text-align: center;">
                 당신을 응원합니다. 항상.<br/>
-                자기자비 여정 팀 일동 💚
+                bty Training Team 일동 💚
             </p>
         </body>
         </html>
@@ -506,7 +510,7 @@ class EmailScheduler:
             
             <p style="margin-top: 30px;">
                 당신을 응원합니다,<br/>
-                자기자비 여정 팀 💚
+                bty Training Team 💚
             </p>
         </body>
         </html>

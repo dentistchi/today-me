@@ -1838,7 +1838,7 @@ Parfit (1984) & Hershfield (2011):
 
 당신을 응원합니다. 항상.
 
-- 자기자비 여정 팀 일동 💚
+- bty Training Team 일동 💚
                 """,
                 "morning_ritual": "나는 28일 여정을 완주했습니다. 나 자신이 자랑스럽습니다.",
                 "core_practice": {
