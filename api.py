@@ -267,14 +267,14 @@ async def assess_responses(request: AssessmentRequest):
             pdf_path = None
         
         # Step 4: 7개 이메일 스케줄 생성 및 발송
-        from datetime import datetime, timedelta
+        from datetime import timedelta
         
         # 시작 날짜를 내일로 설정 (Day 1)
         start_date = datetime.now() + timedelta(days=1)
         start_date = start_date.replace(hour=9, minute=0, second=0, microsecond=0)
         
         # 재검사 링크 (4주 후)
-        retest_link = "https://yoursite.com/retest"
+        retest_link = "https://today-me.pages.dev/"
         
         # 7개 이메일 스케줄 생성
         email_schedule_full = email_scheduler.create_email_schedule(
