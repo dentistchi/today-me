@@ -257,53 +257,46 @@ class EmailScheduler:
         body_html = f"""
         <html>
         <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #2C3E50;">Week {week_num}에 오신 것을 환영합니다, {user_name}님!</h2>
+            <h2 style="color: #2C3E50;">안녕하세요, {user_name}님! 🌟</h2>
             
-            <div style="background-color: #E8F8F5; padding: 20px; border-left: 4px solid #27AE60; margin: 20px 0; text-align: center;">
-                <h3 style="color: #27AE60; margin-top: 0;">🌟 Week {week_num} 시작합니다</h3>
-                <p style="font-size: 16px; font-weight: bold; margin: 10px 0;">저희가 함께합니다 💚</p>
-                <p style="margin: 5px 0;">매일 5-10분, 당신의 변화를 응원합니다.</p>
+            <p>Week {week_num}이 시작되었습니다. 지금까지 여정을 함께해주셔서 감사합니다.</p>
+            
+            <div style="background-color: #E8F8F5; padding: 20px; border-left: 4px solid #27AE60; margin: 20px 0; border-radius: 5px;">
+                <h3 style="color: #27AE60; margin-top: 0;">🌟 Week {week_num} 시작!</h3>
+                <p style="font-size: 15px; margin: 10px 0;"><strong>이번 주 테마:</strong> {theme}</p>
+                <p style="font-size: 14px; font-style: italic; color: #555; margin: 10px 0;">
+                    핵심 마인드셋: {mindset}
+                </p>
+            </div>
+            
+            <h3 style="color: #3498DB;">💚 응원 메시지</h3>
+            <p>완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.</p>
+            <p>하루에 단 <strong>5-10분</strong>만 투자하면 됩니다. 매일 작은 실천이 큰 변화를 만듭니다.</p>
+            <p><strong>저희가 함께합니다. 당신은 혼자가 아닙니다. 💚</strong></p>
+            
+            <h3 style="color: #3498DB;">📎 첨부 파일 안내</h3>
+            <p>이번 주 실천을 위한 <strong>2개의 PDF 가이드</strong>를 첨부했습니다:</p>
+            <div style="background-color: #E3F2FD; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <ol style="margin: 10px 0;">
+                    <li style="margin-bottom: 10px;"><strong>Week {week_num} 요약 가이드</strong><br/>
+                        <span style="color: #555; font-size: 13px;">→ 7일 전체 흐름을 한눈에 파악하세요 (3분 소요)</span></li>
+                    <li><strong>Week {week_num} 상세 실천 가이드</strong><br/>
+                        <span style="color: #555; font-size: 13px;">→ 매일 아침 해당 날짜 페이지를 확인하세요 (5-10분 소요)</span></li>
+                </ol>
+            </div>
+            
+            <h3 style="color: #3498DB;">🎯 이렇게 실천하세요</h3>
+            <div style="background-color: #FEF5E7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>1단계:</strong> 첨부된 PDF를 다운로드하여 스마트폰이나 PC에 저장하세요</p>
+                <p style="margin: 5px 0;"><strong>2단계:</strong> 요약 가이드로 이번 주 전체 계획을 먼저 파악하세요</p>
+                <p style="margin: 5px 0;"><strong>3단계:</strong> 매일 아침, 상세 가이드에서 오늘 날짜를 찾아 읽으세요</p>
+                <p style="margin: 5px 0;"><strong>4단계:</strong> 5-10분 실천하고, 내일 다시 돌아오세요</p>
             </div>
             
             <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
-                <h3 style="color: #27AE60; margin-top: 0;">이번 주 테마: {theme}</h3>
-            </div>
-            
-            <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
-                <h4 style="color: #F39C12; margin-top: 0;">💡 이번 주의 핵심 마인드셋</h4>
-                <p style="font-size: 16px; font-style: italic; font-weight: bold; text-align: center;">
-                    {mindset}
-                </p>
-            </div>
-            
-            <h3 style="color: #3498DB;">📎 첨부 파일 (2개)</h3>
-            <ol>
-                <li><strong>Week {week_num} 요약 가이드</strong> - 7일 치 전체 흐름 한눈에 보기</li>
-                <li><strong>Week {week_num} 상세 실천 가이드</strong> - 매일의 구체적 실천법 (7일 치)</li>
-            </ol>
-            
-            <div style="background-color: #E3F2FD; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h4 style="color: #1976D2; margin-top: 0;">📖 사용 방법</h4>
-                <ul>
-                    <li><strong>요약 가이드:</strong> 이번 주 전체 계획 파악 (3분)</li>
-                    <li><strong>상세 가이드:</strong> 매일 아침 해당 날짜 페이지 확인 (5-10분)</li>
-                    <li>완벽하지 않아도 괜찮습니다. 하루를 놓쳐도 다시 시작하세요!</li>
-                </ul>
-            </div>
-            
-            <h3 style="color: #3498DB;">🎯 시작하기</h3>
-            <p>첨부된 2개의 PDF를 다운로드하여 이번 주 계획을 확인하세요.</p>
-            
-            <div style="background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 0;"><strong>💡 Tip:</strong> 스마트폰에 저장하거나 프린트하여 
-                언제든 참고할 수 있도록 하세요!</p>
-            </div>
-            
-            <div style="background-color: #FFF3CD; padding: 20px; border-radius: 10px; margin: 30px 0; text-align: center;">
-                <p style="font-size: 18px; font-weight: bold; color: #856404; margin: 0;">
-                    저희가 함께합니다 💚<br/>
-                    당신은 혼자가 아닙니다.
-                </p>
+                <p style="margin: 0;"><strong>💡 중요한 팁</strong></p>
+                <p style="margin: 5px 0 0 0;">하루를 놓쳐도 괜찮습니다. 다시 시작하면 됩니다.<br/>
+                완벽하게 하려고 하지 마세요. 꾸준함이 완벽함을 이깁니다.</p>
             </div>
             
             <p style="margin-top: 30px;">
@@ -332,16 +325,17 @@ class EmailScheduler:
             output_filename=f"week{week_num}_detailed_{user_name}.pdf"
         )
         
+        # 파일명을 영문+숫자로만 구성 (한글 인코딩 문제 방지)
         attachments = [
             {
                 "type": "pdf",
                 "path": week_summary_pdf,
-                "filename": f"Week{week_num}_요약_{user_name}.pdf"
+                "filename": f"Week{week_num}_Summary.pdf"
             },
             {
                 "type": "pdf",
                 "path": week_detailed_pdf,
-                "filename": f"Week{week_num}_상세실천가이드_{user_name}.pdf"
+                "filename": f"Week{week_num}_Detailed_Guide.pdf"
             }
         ]
         

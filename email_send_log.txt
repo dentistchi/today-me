@@ -26,3 +26,10 @@
 {"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 4 시작] 테스트사용자님, 안정적 자기가치 - 존재 그 자체로 🌟", "attachments": 2, "timestamp": "2026-02-08T00:46:49.387634"}
 {"success": true, "to": "ywamer2022@gmail.com", "subject": "[자존감 분석 결과] 테스트사용자님, 당신의 진단 결과를 확인하세요 📊", "attachments": 0, "timestamp": "2026-02-08T00:46:51.808674"}
 {"success": true, "to": "ywamer2022@gmail.com", "subject": "[28일 완주!] 테스트사용자님, 축하합니다! 🎉🏆", "attachments": 0, "timestamp": "2026-02-08T00:46:54.184594"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[자존감 진단 완료] 테스트사용자님, 검사가 완료되었습니다 🎉", "attachments": 0, "timestamp": "2026-02-08T00:50:51.708237"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 1 시작] 테스트사용자님, 자기자비 기초 - 자기비판 알아차리기 🌟", "attachments": 2, "timestamp": "2026-02-08T00:50:54.331013"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 2 시작] 테스트사용자님, 완벽주의 내려놓기 - 80%의 용기 🌟", "attachments": 2, "timestamp": "2026-02-08T00:50:57.029711"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 3 시작] 테스트사용자님, 공통 인간성 인식 - 나만이 아니야 🌟", "attachments": 2, "timestamp": "2026-02-08T00:50:59.462862"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[Week 4 시작] 테스트사용자님, 안정적 자기가치 - 존재 그 자체로 🌟", "attachments": 2, "timestamp": "2026-02-08T00:51:02.907727"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[자존감 분석 결과] 테스트사용자님, 당신의 진단 결과를 확인하세요 📊", "attachments": 0, "timestamp": "2026-02-08T00:51:05.326325"}
+{"success": true, "to": "ywamer2022@gmail.com", "subject": "[28일 완주!] 테스트사용자님, 축하합니다! 🎉🏆", "attachments": 0, "timestamp": "2026-02-08T00:51:07.415729"}
