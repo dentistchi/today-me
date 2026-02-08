@@ -48,28 +48,49 @@ function doPost(e) {
   // 5. 고급 분석: 강점 추출 (Python Logic 이식)
   var strengths = extractStrengths(answers);
   
-  // 6. 이메일 본문 생성 (심층 분석 보고서)
-  var userName = params.email.split('@')[0]; // 이메일 아이디를 이름으로 사용
-  var emailBody = createDetailedEmail(userName, params, strengths);
-  var textBody = createTextFallback(userName, params);
+  // 6. 즉시 발송: 진단 완료 알림 이메일
+  var userName = params.email.split('@')[0];
+  var welcomeEmailBody = createWelcomeEmail(userName);
   
-  // 7. 이메일 발송
+  // 7. 즉시 이메일 발송 (진단 완료 알림)
   try {
     MailApp.sendEmail({
       to: params.email,
-      subject: "[오늘의 나] " + userName + "님을 위한 자존감 심층 분석 보고서",
-      htmlBody: emailBody,
-      body: textBody,
-      name: "오늘의 나 연구팀",
-      replyTo: Session.getActiveUser().getEmail()
+      subject: "[자존감 진단 완료] " + userName + "님, 검사가 완료되었습니다 🎉",
+      htmlBody: welcomeEmailBody,
+      name: "bty Training Team"
     });
     
-    // 관리자 알림
-    MailApp.sendEmail({
-      to: Session.getActiveUser().getEmail(),
-      subject: "[Admin] 새로운 진단: " + params.profile_type + " (" + params.total_score + "점)",
-      htmlBody: "<p>사용자: " + params.email + "</p><p>유형: " + params.profile_type + "</p>"
-    });
+    // 8. 24시간 후 발송을 위한 트리거 설정
+    // 상세 분석 데이터를 임시 저장
+    var properties = PropertiesService.getScriptProperties();
+    var triggerData = {
+      email: params.email,
+      userName: userName,
+      totalScore: params.total_score,
+      coreScore: params.core_score,
+      compassionScore: params.compassion_score,
+      stabilityScore: params.stability_score,
+      growthScore: params.growth_score,
+      socialScore: params.social_score,
+      profileType: params.profile_type,
+      answers: params.answers,
+      strengths: JSON.stringify(strengths),
+      timestamp: new Date().getTime()
+    };
+    
+    // 고유 키로 저장
+    var dataKey = "delayed_email_" + params.email + "_" + new Date().getTime();
+    properties.setProperty(dataKey, JSON.stringify(triggerData));
+    
+    // 24시간 후 실행되는 트리거 생성
+    ScriptApp.newTrigger('sendDelayedDetailedReport')
+      .timeBased()
+      .after(24 * 60 * 60 * 1000) // 24시간 = 86400000 밀리초
+      .create();
+    
+    // 트리거 ID를 데이터와 함께 저장
+    properties.setProperty(dataKey + "_trigger", "scheduled");
     
   } catch (error) {
     console.error("이메일 발송 실패: " + error);
@@ -292,4 +313,107 @@ function createDetailedEmail(name, data, strengths) {
 
 function createTextFallback(name, data) {
   return `[오늘의 나] 자존감 분석 결과\n\n${name}님, 안녕하세요.\n당신의 자존감 총점은 ${data.total_score}점입니다.\n유형: ${data.profile_type}\n\n자세한 분석 결과와 강점은 HTML 지원 환경에서 확인해주세요.`;
+}
+/**
+ * 환영 이메일 생성 (즉시 발송용)
+ */
+function createWelcomeEmail(userName) {
+  return `
+    <html>
+    <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #2C3E50;">안녕하세요, ${userName}님!</h2>
+        
+        <p>자존감 진단이 완료되었습니다. 용기 내어 자신을 돌아본 당신을 응원합니다. 🎉</p>
+        
+        <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+            <h3 style="color: #27AE60; margin-top: 0;">✅ 진단 완료</h3>
+            <p>당신의 응답을 분석하여 맞춤형 보고서를 준비하고 있습니다.</p>
+        </div>
+        
+        <h3 style="color: #3498DB;">📊 다음 단계</h3>
+        <div style="background-color: #FEF5E7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>💎 24시간 후</strong></p>
+            <p>당신만을 위한 <strong>완전한 심층 분석 보고서 (PDF)</strong>를 이메일로 보내드립니다.</p>
+            <ul style="margin-top: 10px;">
+                <li>5차원 자존감 점수 상세 분석</li>
+                <li>당신의 숨겨진 강점 발견</li>
+                <li>개인 맞춤형 성장 제안</li>
+                <li>4주 맞춤 성장 로드맵</li>
+                <li>PDF 보고서 첨부</li>
+            </ul>
+        </div>
+        
+        <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+            <p style="margin: 0;"><strong>💚 응원 메시지</strong></p>
+            <p style="margin: 5px 0 0 0;">완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.<br/>
+            24시간 후 상세한 분석 보고서를 통해 당신의 여정을 함께하겠습니다.</p>
+        </div>
+        
+        <p style="margin-top: 30px;">
+            24시간 후에 다시 만나요!<br/>
+            bty Training Team 💚
+        </p>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * 24시간 후 상세 보고서 발송
+ * (트리거로 자동 실행됨)
+ */
+function sendDelayedDetailedReport() {
+  var properties = PropertiesService.getScriptProperties();
+  var allProperties = properties.getProperties();
+  
+  // 발송 대기 중인 이메일 찾기
+  for (var key in allProperties) {
+    if (key.startsWith("delayed_email_") && !key.endsWith("_trigger") && !key.endsWith("_sent")) {
+      try {
+        var triggerData = JSON.parse(allProperties[key]);
+        var currentTime = new Date().getTime();
+        var elapsedHours = (currentTime - triggerData.timestamp) / (1000 * 60 * 60);
+        
+        // 24시간 이상 경과한 경우에만 발송
+        if (elapsedHours >= 24) {
+          // 강점 데이터 복원
+          var strengths = JSON.parse(triggerData.strengths);
+          
+          // 상세 분석 이메일 생성
+          var params = {
+            email: triggerData.email,
+            total_score: triggerData.totalScore,
+            core_score: triggerData.coreScore,
+            compassion_score: triggerData.compassionScore,
+            stability_score: triggerData.stabilityScore,
+            growth_score: triggerData.growthScore,
+            social_score: triggerData.socialScore,
+            profile_type: triggerData.profileType,
+            answers: triggerData.answers
+          };
+          
+          var emailBody = createDetailedEmail(triggerData.userName, params, strengths);
+          var textBody = createTextFallback(triggerData.userName, params);
+          
+          // 이메일 발송
+          MailApp.sendEmail({
+            to: triggerData.email,
+            subject: "[자존감 분석 결과] " + triggerData.userName + "님, 당신의 진단 결과를 확인하세요 📊",
+            htmlBody: emailBody,
+            body: textBody,
+            name: "bty Training Team"
+          });
+          
+          // 발송 완료 표시
+          properties.setProperty(key + "_sent", "true");
+          properties.deleteProperty(key);
+          properties.deleteProperty(key + "_trigger");
+          
+          Logger.log("24시간 후 이메일 발송 완료: " + triggerData.email);
+        }
+      } catch (error) {
+        Logger.log("이메일 발송 중 오류: " + error);
+      }
+    }
+  }
 }
