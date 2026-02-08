@@ -12,6 +12,7 @@ import os
 from daily_practice_guide_v1 import DailyPracticeGuide
 from daily_practice_pdf_generator import DailyPracticePDFGenerator
 from weekly_pdf_generator import WeeklyPDFGenerator
+from weekly_detailed_pdf_generator import WeeklyDetailedPDFGenerator
 from real_email_sender import RealEmailSender
 
 
@@ -22,6 +23,7 @@ class EmailScheduler:
         self.practice_guide = None
         self.pdf_generator = DailyPracticePDFGenerator()
         self.weekly_pdf_generator = WeeklyPDFGenerator()
+        self.weekly_detailed_pdf_generator = WeeklyDetailedPDFGenerator()
         # 실제 이메일 발송을 위한 RealEmailSender 초기화
         self.email_sender = RealEmailSender()
         # 이메일 발송 활성화 여부 (환경 변수에서 확인)
@@ -76,7 +78,7 @@ class EmailScheduler:
             analysis_results=analysis_results
         ))
         
-        # 2. Week 1 시작 리마인더 (Day 1, 시작일) + 28일 매일 실천 가이드 PDF
+        # 2. Week 1 시작 리마인더 (Day 1, 시작일)
         emails.append(self._create_week_start_email(
             user_email=user_email,
             user_name=user_name,
@@ -84,8 +86,7 @@ class EmailScheduler:
             send_at=start_date,
             day_data=all_days[0],
             week_days=all_days[0:7],
-            start_date=start_date,
-            daily_guide_pdf_path=daily_guide_pdf_path  # Week 1에만 28일 가이드 첨부
+            start_date=start_date
         ))
         
         # 3. Week 2 시작 리마인더 (Day 8)
@@ -230,9 +231,9 @@ class EmailScheduler:
         day_data: Dict,
         week_days: List[Dict],
         start_date: datetime,
-        daily_guide_pdf_path: Optional[str] = None  # 28일 매일 실천 가이드 PDF (Week 1만)
+        daily_guide_pdf_path: Optional[str] = None  # 더 이상 사용하지 않음
     ) -> Dict:
-        """주간 시작 리마인더 이메일 (마인드셋 + 주간 PDF 첨부)"""
+        """주간 시작 리마인더 이메일 (마인드셋 + 주차별 PDF 2개 첨부)"""
         week_themes = {
             1: "자기자비 기초 - 자기비판 알아차리기",
             2: "완벽주의 내려놓기 - 80%의 용기",
@@ -251,27 +252,16 @@ class EmailScheduler:
         mindset = week_mindsets.get(week_num, "")
         subject = f"[Week {week_num} 시작] {user_name}님, {theme} 🌟"
         
-        # Week 1만 특별 메시지
-        week1_special = ""
-        if week_num == 1:
-            week1_special = f"""
-            <div style="background-color: #E3F2FD; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
-                <h4 style="color: #1976D2; margin-top: 0;">🎁 특별 선물: 28일 매일 실천 가이드</h4>
-                <p>오늘부터 28일 동안 매일 실천할 가이드를 첨부했습니다.</p>
-                <p><strong>developing_critic_28일.pdf</strong>를 다운로드하여 매일 참고하세요!</p>
-                <ul>
-                    <li>매일의 아침 의식</li>
-                    <li>5-10분 핵심 실천법</li>
-                    <li>저녁 성찰 가이드</li>
-                    <li>작은 승리 목표</li>
-                </ul>
-            </div>
-            """
-        
         body_html = f"""
         <html>
         <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <h2 style="color: #2C3E50;">Week {week_num}에 오신 것을 환영합니다, {user_name}님!</h2>
+            
+            <div style="background-color: #E8F8F5; padding: 20px; border-left: 4px solid #27AE60; margin: 20px 0; text-align: center;">
+                <h3 style="color: #27AE60; margin-top: 0;">🌟 Week {week_num} 시작합니다</h3>
+                <p style="font-size: 16px; font-weight: bold; margin: 10px 0;">저희가 함께합니다 💚</p>
+                <p style="margin: 5px 0;">매일 5-10분, 당신의 변화를 응원합니다.</p>
+            </div>
             
             <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
                 <h3 style="color: #27AE60; margin-top: 0;">이번 주 테마: {theme}</h3>
@@ -284,27 +274,35 @@ class EmailScheduler:
                 </p>
             </div>
             
-            {week1_special}
+            <h3 style="color: #3498DB;">📎 첨부 파일 (2개)</h3>
+            <ol>
+                <li><strong>Week {week_num} 요약 가이드</strong> - 7일 치 전체 흐름 한눈에 보기</li>
+                <li><strong>Week {week_num} 상세 실천 가이드</strong> - 매일의 구체적 실천법 (7일 치)</li>
+            </ol>
             
-            <h3 style="color: #3498DB;">📎 첨부 파일</h3>
-            <p><strong>Week {week_num} 실천 가이드 PDF</strong> - 이번 주 7일 치 상세 플랜이 담겨 있습니다.</p>
-            <ul>
-                <li>매일의 마인드셋</li>
-                <li>핵심 실천 방법</li>
-                <li>예상되는 저항과 돌파 전략</li>
-                <li>작은 승리 목표</li>
-            </ul>
+            <div style="background-color: #E3F2FD; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4 style="color: #1976D2; margin-top: 0;">📖 사용 방법</h4>
+                <ul>
+                    <li><strong>요약 가이드:</strong> 이번 주 전체 계획 파악 (3분)</li>
+                    <li><strong>상세 가이드:</strong> 매일 아침 해당 날짜 페이지 확인 (5-10분)</li>
+                    <li>완벽하지 않아도 괜찮습니다. 하루를 놓쳐도 다시 시작하세요!</li>
+                </ul>
+            </div>
             
             <h3 style="color: #3498DB;">🎯 시작하기</h3>
-            <p>첨부된 PDF를 다운로드하여 이번 주 계획을 확인하세요. 
-            완벽하지 않아도 괜찮습니다. 하루에 하나씩, 천천히 진행하세요.</p>
+            <p>첨부된 2개의 PDF를 다운로드하여 이번 주 계획을 확인하세요.</p>
             
             <div style="background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p style="margin: 0;"><strong>💡 Tip:</strong> PDF를 프린트하거나 스마트폰에 저장하여 
+                <p style="margin: 0;"><strong>💡 Tip:</strong> 스마트폰에 저장하거나 프린트하여 
                 언제든 참고할 수 있도록 하세요!</p>
             </div>
             
-            <p><strong>중요한 것은 완벽함이 아니라 방향입니다. 당신은 이미 잘하고 있습니다.</strong></p>
+            <div style="background-color: #FFF3CD; padding: 20px; border-radius: 10px; margin: 30px 0; text-align: center;">
+                <p style="font-size: 18px; font-weight: bold; color: #856404; margin: 0;">
+                    저희가 함께합니다 💚<br/>
+                    당신은 혼자가 아닙니다.
+                </p>
+            </div>
             
             <p style="margin-top: 30px;">
                 당신을 응원합니다,<br/>
@@ -314,28 +312,36 @@ class EmailScheduler:
         </html>
         """
         
-        # 주간 PDF 생성
-        week_pdf_path = self.weekly_pdf_generator.generate_weekly_pdf(
+        # 주간 요약 PDF 생성
+        week_summary_pdf = self.weekly_pdf_generator.generate_weekly_pdf(
             user_name=user_name,
             week_num=week_num,
             week_days=week_days,
             start_date=send_at,
-            output_filename=f"week{week_num}_guide_{user_name}.pdf"
+            output_filename=f"week{week_num}_summary_{user_name}.pdf"
         )
         
-        attachments = [{
-            "type": "pdf",
-            "path": week_pdf_path,
-            "filename": f"Week{week_num}_{user_name}_실천가이드.pdf"
-        }]
+        # 주간 상세 PDF 생성 (7일치 상세 내용)
+        week_detailed_pdf = self.weekly_detailed_pdf_generator.generate_weekly_detailed_pdf(
+            user_name=user_name,
+            week_num=week_num,
+            week_days=week_days,
+            start_date=send_at,
+            output_filename=f"week{week_num}_detailed_{user_name}.pdf"
+        )
         
-        # Week 1에만 28일 매일 실천 가이드 추가
-        if week_num == 1 and daily_guide_pdf_path:
-            attachments.append({
+        attachments = [
+            {
                 "type": "pdf",
-                "path": daily_guide_pdf_path,
-                "filename": f"{user_name}_28일.pdf"
-            })
+                "path": week_summary_pdf,
+                "filename": f"Week{week_num}_요약_{user_name}.pdf"
+            },
+            {
+                "type": "pdf",
+                "path": week_detailed_pdf,
+                "filename": f"Week{week_num}_상세실천가이드_{user_name}.pdf"
+            }
+        ]
         
         return {
             "type": f"week_{week_num}_start",
