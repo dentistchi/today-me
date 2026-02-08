@@ -127,21 +127,19 @@ class RealEmailSender:
                             part.set_payload(f.read())
                             encoders.encode_base64(part)
                             
-                            # 한글 파일명 인코딩 개선 (RFC 2047 + RFC 2231)
+                            # 한글 파일명을 ASCII 안전 형식으로 인코딩
                             from email.header import Header
-                            from email.utils import encode_rfc2231
+                            from urllib.parse import quote
                             
-                            # 방법 1: RFC 2047 헤더 인코딩 (대부분의 클라이언트 호환)
-                            encoded_filename = Header(filename, 'utf-8').encode()
+                            # RFC 2231 형식으로 인코딩 (Gmail, Outlook 호환)
+                            # filename*=UTF-8''encoded_filename 형식
+                            encoded_filename = quote(filename.encode('utf-8'))
                             
-                            # 방법 2: RFC 2231 파라미터 인코딩 (추가 호환성)
                             part.add_header(
                                 'Content-Disposition',
                                 'attachment',
-                                filename=encoded_filename
+                                filename=('utf-8', '', filename)
                             )
-                            # RFC 2231 형식도 추가 (Gmail 등에서 더 잘 작동)
-                            part.set_param('filename', filename, header='Content-Disposition', charset='utf-8')
                             
                             msg.attach(part)
             

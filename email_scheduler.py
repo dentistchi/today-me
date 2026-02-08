@@ -188,8 +188,8 @@ class EmailScheduler:
                 </ul>
             </div>
             
-            <h3 style="color: #3498DB;">🌱 그 동안 준비해주세요</h3>
-            <p>내일부터 시작할 <strong>28일 자기자비 여정</strong>을 위해 마음의 준비를 해주세요.</p>
+            <h3 style="color: #3498DB;">🌱 내일부터 시작합니다</h3>
+            <p><strong>내일</strong>부터 <strong>28일 자기자비 여정</strong>의 첫 번째 실천 가이드를 보내드립니다.</p>
             
             <div style="background-color: #F4ECF7; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h4 style="color: #8E44AD; margin-top: 0;">💡 28일 여정 미리보기</h4>
@@ -201,12 +201,10 @@ class EmailScheduler:
                 </p>
             </div>
             
-            <p>매주 그 주의 실천 가이드를 보내드립니다.</p>
-            
             <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
                 <p style="margin: 0;"><strong>💚 응원 메시지</strong></p>
                 <p style="margin: 5px 0 0 0;">완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.<br/>
-                매주 실천 가이드를 보내드리며, 당신의 여정을 함께하겠습니다.</p>
+                내일부터 매주 실천 가이드를 보내드리며, 당신의 여정을 함께하겠습니다.</p>
             </div>
             
             <p style="margin-top: 30px;">
@@ -475,18 +473,18 @@ class EmailScheduler:
                 </ul>
             </div>
             
-            <h3 style="color: #3498DB;">🚀 오늘은 Day 2입니다</h3>
+            <h3 style="color: #3498DB;">🚀 다음 단계</h3>
             
-            <p>28일 가이드 PDF의 <strong>Day 2</strong>를 확인하세요.<br/>
-            오늘의 실천은 단 <strong>5-10분</strong>이면 충분합니다.</p>
+            <p>매주 실천 가이드 이메일을 통해 구체적인 실천 방법을 안내해드립니다.<br/>
+            첨부된 PDF와 함께 차근차근 따라오시면 됩니다.</p>
             
             <div style="background-color: #FEF5E7; padding: 15px; border-left: 4px solid #F39C12; margin: 20px 0;">
-                <h4 style="color: #F39C12; margin-top: 0;">💡 읽는 방법</h4>
+                <h4 style="color: #F39C12; margin-top: 0;">💡 보고서 읽는 방법</h4>
                 <ol>
                     <li><strong>분석 보고서:</strong> 천천히 읽으며 자신을 이해하세요 (15-20분)</li>
                     <li><strong>감정 확인:</strong> 읽으면서 어떤 감정이 드는지 알아차리세요</li>
                     <li><strong>강점 찾기:</strong> '숨겨진 강점' 섹션을 특히 주의 깊게 보세요</li>
-                    <li><strong>실천 시작:</strong> 가장 쉬운 것 하나를 오늘 실천해보세요</li>
+                    <li><strong>실천 준비:</strong> 매주 받는 가이드를 통해 단계별로 실천하세요</li>
                 </ol>
             </div>
             
