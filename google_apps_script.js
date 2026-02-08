@@ -7,76 +7,113 @@
  */
 
 function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var params = e.parameter;
-  
-  // 1. 답변 데이터 파싱 (JSON 문자열 -> 배열)
-  var answers = [];
   try {
-    answers = JSON.parse(params.answers || "[]");
-  } catch (err) {
-    console.error("JSON 파싱 오류: " + err);
-    answers = [];
-  }
+    // 스프레드시트 ID를 직접 지정 (Script Properties에서 가져오기)
+    var properties = PropertiesService.getScriptProperties();
+    var spreadsheetId = properties.getProperty('SPREADSHEET_ID');
+    
+    var params = e.parameter;
+    
+    Logger.log("=== doPost 시작 ===");
+    Logger.log("수신 이메일: " + params.email);
+    
+    // 1. 답변 데이터 파싱 (JSON 문자열 -> 배열)
+    var answers = [];
+    try {
+      answers = JSON.parse(params.answers || "[]");
+      Logger.log("답변 파싱 완료: " + answers.length + "개");
+    } catch (err) {
+      Logger.log("JSON 파싱 오류: " + err);
+      answers = [];
+    }
 
-  // 2. 부주의 응답 감지 (Low Variance Check)
-  var variance = calculateVariance(answers);
-  var reliability = variance < 0.3 ? "Low (Careless)" : "Normal";
+    // 2. 부주의 응답 감지 (Low Variance Check)
+    var variance = calculateVariance(answers);
+    var reliability = variance < 0.3 ? "Low (Careless)" : "Normal";
+    Logger.log("응답 신뢰도: " + reliability + " (variance: " + variance.toFixed(3) + ")");
 
-  // 3. 시트 헤더 설정 (없을 경우)
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "Timestamp", "Email", "Total Score", "Core", "Compassion", 
-      "Stability", "Growth", "Social", "Profile Type", "Answers", "Variance", "Reliability"
-    ]);
-  }
+    // 3. 스프레드시트에 데이터 저장 (ID가 있는 경우에만)
+    if (spreadsheetId) {
+      try {
+        var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+        var sheet = spreadsheet.getActiveSheet();
+        
+        // 시트 헤더 설정 (없을 경우)
+        if (sheet.getLastRow() === 0) {
+          sheet.appendRow([
+            "Timestamp", "Email", "Total Score", "Core", "Compassion", 
+            "Stability", "Growth", "Social", "Profile Type", "Answers", "Variance", "Reliability"
+          ]);
+        }
+        
+        // 4. 데이터 저장
+        sheet.appendRow([
+          new Date(),
+          params.email,
+          params.total_score,
+          params.core_score,
+          params.compassion_score,
+          params.stability_score,
+          params.growth_score,
+          params.social_score,
+          params.profile_type,
+          params.answers,
+          variance.toFixed(3),
+          reliability
+        ]);
+        
+        Logger.log("✅ 스프레드시트 저장 완료");
+      } catch (sheetError) {
+        Logger.log("❌ 스프레드시트 저장 실패: " + sheetError);
+      }
+    } else {
+      Logger.log("⚠️ SPREADSHEET_ID가 설정되지 않음");
+    }
   
-  // 4. 데이터 저장
-  sheet.appendRow([
-    new Date(),
-    params.email,
-    params.total_score,
-    params.core_score,
-    params.compassion_score,
-    params.stability_score,
-    params.growth_score,
-    params.social_score,
-    params.profile_type,
-    params.answers,
-    variance.toFixed(3),
-    reliability
-  ]);
-  
-  // 5. 고급 분석: 강점 추출 (Python Logic 이식)
-  var strengths = extractStrengths(answers);
-  
-  // 6. 즉시 발송: 진단 완료 알림 이메일
-  var userName = params.email.split('@')[0];
-  var welcomeEmailBody = createWelcomeEmail(userName);
-  
-  // 7. 즉시 이메일 발송 (진단 완료 알림)
-  try {
+    // 5. 고급 분석: 강점 추출 (Python Logic 이식)
+    var strengths = extractStrengths(answers);
+    Logger.log("강점 추출 완료: " + strengths.length + "개");
+    
+    // 6. 즉시 발송: 진단 완료 알림 이메일
+    var userName = params.email.split('@')[0];
+    var welcomeEmailBody = createWelcomeEmail(userName);
+    
+    // 7. 즉시 이메일 발송 (진단 완료 알림)
+    Logger.log("📧 이메일 발송 시도: " + params.email);
     MailApp.sendEmail({
       to: params.email,
       subject: "[자존감 진단 완료] " + userName + "님, 검사가 완료되었습니다 🎉",
       htmlBody: welcomeEmailBody,
       name: "bty Training Team"
     });
+    Logger.log("✅ 환영 이메일 발송 완료!");
     
     // 8. 모든 후속 이메일을 위한 트리거 설정
     scheduleAllFollowUpEmails(params, userName, strengths);
+    Logger.log("✅ 모든 트리거 설정 완료");
+    
+    // 성공 응답 반환
+    return ContentService.createTextOutput(JSON.stringify({
+      "result":"success",
+      "message": "이메일이 발송되었습니다",
+      "email": params.email
+    })).setMimeType(ContentService.MimeType.JSON);
     
   } catch (error) {
-    console.error("이메일 발송 실패: " + error);
+    Logger.log("❌ 치명적 오류: " + error);
+    Logger.log("오류 스택: " + error.stack);
+    
+    // 오류 응답 반환
+    return ContentService.createTextOutput(JSON.stringify({
+      "result":"error",
+      "message": error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
   }
-  
-  // 성공 응답 반환
-  return ContentService.createTextOutput(JSON.stringify({"result":"success"}))
-    .setMimeType(ContentService.MimeType.JSON);
 }
 
 /**
  * 모든 후속 이메일 스케줄링 (24시간 후 ~ 5주차)
+ * 테스트용: 2~7분 간격으로 설정
  */
 function scheduleAllFollowUpEmails(params, userName, strengths) {
   var properties = PropertiesService.getScriptProperties();
@@ -97,64 +134,70 @@ function scheduleAllFollowUpEmails(params, userName, strengths) {
     timestamp: timestamp
   };
   
-  // 고유 키 생성
-  var baseKey = params.email + "_" + timestamp;
+  // 고유 키로 저장 (이메일 주소로 단순화)
+  var dataKey = "user_" + params.email.replace(/[@.]/g, '_');
+  properties.setProperty(dataKey, JSON.stringify(triggerData));
+  Logger.log("사용자 데이터 저장: " + dataKey);
   
-  // 1. 24시간 후: 상세 분석 보고서
-  var detailedKey = "detailed_email_" + baseKey;
-  properties.setProperty(detailedKey, JSON.stringify(triggerData));
-  ScriptApp.newTrigger('sendDelayedDetailedReport')
-    .timeBased()
-    .after(24 * 60 * 60 * 1000) // 24시간
-    .create();
-  properties.setProperty(detailedKey + "_scheduled", "true");
-  
-  // 2. 1주 후: 1주차 자존감 향상 이메일
-  var week1Key = "week1_email_" + baseKey;
-  properties.setProperty(week1Key, JSON.stringify(triggerData));
-  ScriptApp.newTrigger('sendWeek1Email')
-    .timeBased()
-    .after(7 * 24 * 60 * 60 * 1000) // 7일
-    .create();
-  properties.setProperty(week1Key + "_scheduled", "true");
-  
-  // 3. 2주 후: 2주차 자존감 향상 이메일
-  var week2Key = "week2_email_" + baseKey;
-  properties.setProperty(week2Key, JSON.stringify(triggerData));
-  ScriptApp.newTrigger('sendWeek2Email')
-    .timeBased()
-    .after(14 * 24 * 60 * 60 * 1000) // 14일
-    .create();
-  properties.setProperty(week2Key + "_scheduled", "true");
-  
-  // 4. 3주 후: 3주차 자존감 향상 이메일
-  var week3Key = "week3_email_" + baseKey;
-  properties.setProperty(week3Key, JSON.stringify(triggerData));
-  ScriptApp.newTrigger('sendWeek3Email')
-    .timeBased()
-    .after(21 * 24 * 60 * 60 * 1000) // 21일
-    .create();
-  properties.setProperty(week3Key + "_scheduled", "true");
-  
-  // 5. 4주 후: 4주차 자존감 향상 이메일
-  var week4Key = "week4_email_" + baseKey;
-  properties.setProperty(week4Key, JSON.stringify(triggerData));
-  ScriptApp.newTrigger('sendWeek4Email')
-    .timeBased()
-    .after(28 * 24 * 60 * 60 * 1000) // 28일
-    .create();
-  properties.setProperty(week4Key + "_scheduled", "true");
-  
-  // 6. 5주 후: 마무리 이메일
-  var finalKey = "final_email_" + baseKey;
-  properties.setProperty(finalKey, JSON.stringify(triggerData));
-  ScriptApp.newTrigger('sendFinalEmail')
-    .timeBased()
-    .after(35 * 24 * 60 * 60 * 1000) // 35일
-    .create();
-  properties.setProperty(finalKey + "_scheduled", "true");
-  
-  Logger.log("모든 후속 이메일 스케줄링 완료: " + params.email);
+  try {
+    // 1. 24시간 후: 상세 분석 보고서 (테스트: 2분)
+    var trigger1 = ScriptApp.newTrigger('sendDelayedDetailedReport')
+      .timeBased()
+      .after(2 * 60 * 1000) // 테스트용: 2분 (실제: 24 * 60 * 60 * 1000)
+      .create();
+    Logger.log("트리거 1 생성: 상세 보고서 (2분 후) - " + trigger1.getUniqueId());
+    
+    // 2. 1주 후: 1주차 이메일 (테스트: 3분)
+    var trigger2 = ScriptApp.newTrigger('sendWeek1Email')
+      .timeBased()
+      .after(3 * 60 * 1000) // 테스트용: 3분 (실제: 7 * 24 * 60 * 60 * 1000)
+      .create();
+    Logger.log("트리거 2 생성: Week 1 (3분 후) - " + trigger2.getUniqueId());
+    
+    // 3. 2주 후: 2주차 이메일 (테스트: 4분)
+    var trigger3 = ScriptApp.newTrigger('sendWeek2Email')
+      .timeBased()
+      .after(4 * 60 * 1000) // 테스트용: 4분 (실제: 14 * 24 * 60 * 60 * 1000)
+      .create();
+    Logger.log("트리거 3 생성: Week 2 (4분 후) - " + trigger3.getUniqueId());
+    
+    // 4. 3주 후: 3주차 이메일 (테스트: 5분)
+    var trigger4 = ScriptApp.newTrigger('sendWeek3Email')
+      .timeBased()
+      .after(5 * 60 * 1000) // 테스트용: 5분 (실제: 21 * 24 * 60 * 60 * 1000)
+      .create();
+    Logger.log("트리거 4 생성: Week 3 (5분 후) - " + trigger4.getUniqueId());
+    
+    // 5. 4주 후: 4주차 이메일 (테스트: 6분)
+    var trigger5 = ScriptApp.newTrigger('sendWeek4Email')
+      .timeBased()
+      .after(6 * 60 * 1000) // 테스트용: 6분 (실제: 28 * 24 * 60 * 60 * 1000)
+      .create();
+    Logger.log("트리거 5 생성: Week 4 (6분 후) - " + trigger5.getUniqueId());
+    
+    // 6. 5주 후: 마무리 이메일 (테스트: 7분)
+    var trigger6 = ScriptApp.newTrigger('sendCompletionEmail')
+      .timeBased()
+      .after(7 * 60 * 1000) // 테스트용: 7분 (실제: 35 * 24 * 60 * 60 * 1000)
+      .create();
+    Logger.log("트리거 6 생성: 완료 이메일 (7분 후) - " + trigger6.getUniqueId());
+    
+    // 트리거 ID 저장
+    var triggerIds = {
+      detailed: trigger1.getUniqueId(),
+      week1: trigger2.getUniqueId(),
+      week2: trigger3.getUniqueId(),
+      week3: trigger4.getUniqueId(),
+      week4: trigger5.getUniqueId(),
+      completion: trigger6.getUniqueId()
+    };
+    properties.setProperty(dataKey + "_triggers", JSON.stringify(triggerIds));
+    Logger.log("✅ 모든 트리거 ID 저장 완료");
+    
+  } catch (triggerError) {
+    Logger.log("❌ 트리거 설정 실패: " + triggerError);
+    throw triggerError;
+  }
 }
 
 /**
@@ -425,56 +468,70 @@ function createWelcomeEmail(userName) {
  * 24시간 후 상세 보고서 발송
  * (트리거로 자동 실행됨)
  */
+/**
+ * 24시간 후 상세 보고서 발송 (테스트: 2분 후)
+ * (트리거로 자동 실행됨)
+ */
 function sendDelayedDetailedReport() {
+  Logger.log("=== sendDelayedDetailedReport 실행 시작 ===");
   var properties = PropertiesService.getScriptProperties();
   var allProperties = properties.getProperties();
   
-  // 발송 대기 중인 이메일 찾기
+  // 모든 사용자 데이터 찾기
   for (var key in allProperties) {
-    if (key.startsWith("detailed_email_") && !key.endsWith("_scheduled") && !key.endsWith("_sent")) {
+    if (key.startsWith("user_") && !key.endsWith("_triggers") && !key.endsWith("_detailed_sent")) {
       try {
+        Logger.log("처리 중인 키: " + key);
         var triggerData = JSON.parse(allProperties[key]);
-        var currentTime = new Date().getTime();
-        var elapsedHours = (currentTime - triggerData.timestamp) / (1000 * 60 * 60);
         
-        // 24시간 이상 경과한 경우에만 발송
-        if (elapsedHours >= 24) {
-          // 강점 데이터 복원
-          var strengths = JSON.parse(triggerData.strengths);
-          
-          // 상세 분석 이메일 생성
-          var params = {
-            email: triggerData.email,
-            total_score: triggerData.totalScore,
-            core_score: triggerData.coreScore,
-            compassion_score: triggerData.compassionScore,
-            stability_score: triggerData.stabilityScore,
-            growth_score: triggerData.growthScore,
-            social_score: triggerData.socialScore,
-            profile_type: triggerData.profileType,
-            answers: triggerData.answers
-          };
-          
-          var emailBody = createDetailedEmail(triggerData.userName, params, strengths);
-          
-          // 이메일 발송
-          MailApp.sendEmail({
-            to: triggerData.email,
-            subject: "[자존감 분석 결과] " + triggerData.userName + "님, 당신의 진단 결과를 확인하세요 📊",
-            htmlBody: emailBody,
-            name: "bty Training Team"
-          });
-          
-          // 발송 완료 표시
-          properties.setProperty(key + "_sent", "true");
-          properties.deleteProperty(key);
-          properties.deleteProperty(key + "_scheduled");
-          
-          Logger.log("24시간 후 이메일 발송 완료: " + triggerData.email);
+        // 이미 발송되었는지 확인
+        var sentFlag = properties.getProperty(key + "_detailed_sent");
+        if (sentFlag === "sent") {
+          Logger.log("⏭️ 이미 발송됨: " + triggerData.email);
+          continue;
         }
+        
+        Logger.log("📧 상세 보고서 발송 시작: " + triggerData.email);
+        
+        // 강점 데이터 복원
+        var strengths = JSON.parse(triggerData.strengths);
+        
+        // 상세 분석 이메일 생성
+        var params = {
+          email: triggerData.email,
+          total_score: triggerData.totalScore,
+          core_score: triggerData.coreScore,
+          compassion_score: triggerData.compassionScore,
+          stability_score: triggerData.stabilityScore,
+          growth_score: triggerData.growthScore,
+          social_score: triggerData.socialScore,
+          profile_type: triggerData.profileType,
+          answers: triggerData.answers
+        };
+        
+        var emailBody = createDetailedEmail(triggerData.userName, params, strengths);
+        var textBody = createTextFallback(triggerData.userName, params);
+        
+        // 이메일 발송
+        MailApp.sendEmail({
+          to: triggerData.email,
+          subject: "[자존감 분석 결과] " + triggerData.userName + "님, 당신의 진단 결과를 확인하세요 📊",
+          htmlBody: emailBody,
+          body: textBody,
+          name: "bty Training Team"
+        });
+        
+        // 발송 완료 표시
+        properties.setProperty(key + "_detailed_sent", "sent");
+        Logger.log("✅ 상세 보고서 발송 완료: " + triggerData.email);
+        
       } catch (error) {
-        Logger.log("이메일 발송 중 오류: " + error);
+        Logger.log("❌ 발송 오류 (" + key + "): " + error);
       }
+    }
+  }
+  Logger.log("=== sendDelayedDetailedReport 실행 완료 ===");
+}
     }
   }
 }

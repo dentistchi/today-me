@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 발송 테스트</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Google Apps Script 이메일 발송 테스트</h1>
+        
+        <div class="info">
+            <strong>테스트 목적:</strong><br>
+            • Google Apps Script가 정상적으로 작동하는지 확인<br>
+            • 이메일이 실제로 발송되는지 확인<br>
+            • 스프레드시트에 데이터가 저장되는지 확인
+        </div>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="email">이메일 주소 *</label>
+                <input type="email" id="email" name="email" required placeholder="test@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="total_score">총점 (0-100)</label>
+                <input type="number" id="total_score" name="total_score" value="65" min="0" max="100">
+            </div>
+            
+            <div class="form-group">
+                <label for="profile_type">프로필 유형</label>
+                <select id="profile_type" name="profile_type">
+                    <option value="성장하는 나무 🌱">성장하는 나무 🌱</option>
+                    <option value="단단한 바위 🗿">단단한 바위 🗿</option>
+                    <option value="흐르는 물 💧">흐르는 물 💧</option>
+                    <option value="타오르는 불 🔥">타오르는 불 🔥</option>
+                </select>
+            </div>
+            
+            <button type="submit" id="submitBtn">테스트 이메일 발송</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 13px;">
+            <strong>확인 사항:</strong><br>
+            1. 즉시 "진단 완료" 이메일이 도착하는지 확인<br>
+            2. Google Sheets에 데이터가 저장되는지 확인<br>
+            3. Apps Script 로그에서 오류 확인<br>
+            4. 2-7분 후 후속 이메일들이 도착하는지 확인
+        </div>
+    </div>
+    
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxiG73EeWm4K3zjBQbFvAs8tkw2AD7J3Us3M8_dLcQnCP0VXtET4OX14AI33IaVVQMzzA/exec';
+        
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '전송 중...';
+            resultDiv.style.display = 'none';
+            
+            // 테스트 데이터 생성
+            const formData = new FormData();
+            formData.append('email', document.getElementById('email').value);
+            formData.append('total_score', document.getElementById('total_score').value);
+            formData.append('core_score', '70');
+            formData.append('compassion_score', '65');
+            formData.append('stability_score', '60');
+            formData.append('growth_score', '70');
+            formData.append('social_score', '55');
+            formData.append('profile_type', document.getElementById('profile_type').value);
+            
+            // 테스트용 답변 생성 (50개)
+            const testAnswers = Array(50).fill(0).map(() => Math.floor(Math.random() * 4) + 1);
+            formData.append('answers', JSON.stringify(testAnswers));
+            
+            try {
+                console.log('📤 Google Apps Script로 데이터 전송 중...');
+                console.log('URL:', GAS_URL);
+                
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors' // CORS 회피
+                });
+                
+                // no-cors 모드에서는 응답을 읽을 수 없으므로 전송 성공으로 간주
+                console.log('✅ 전송 완료 (응답 확인 불가 - no-cors 모드)');
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ 테스트 이메일이 전송되었습니다! 이메일함을 확인해주세요. (스팸함도 확인!)';
+                resultDiv.style.display = 'block';
+                
+            } catch (error) {
+                console.error('❌ 전송 실패:', error);
+                
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 오류 발생: ' + error.message;
+                resultDiv.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '테스트 이메일 발송';
+            }
+        });
+    </script>
+</body>
+</html>
