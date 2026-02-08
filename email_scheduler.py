@@ -68,7 +68,7 @@ class EmailScheduler:
         # 이메일 스케줄 구성
         emails = []
         
-        # 1. 진단 완료 이메일 (개발자용, 즉시 발송)
+        # 1. 진단 완료 이메일 (사용자용, 즉시 발송)
         emails.append(self._create_diagnosis_complete_email(
             user_email=user_email,
             user_name=user_name,
@@ -178,12 +178,13 @@ class EmailScheduler:
             
             <h3 style="color: #3498DB;">📊 다음 단계</h3>
             <div style="background-color: #FEF5E7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p><strong>🕐 24시간 후</strong></p>
-                <p>당신만을 위한 <strong>상세 자존감 분석 보고서</strong>를 이메일로 보내드립니다.</p>
+                <p><strong>💎 24시간 후</strong></p>
+                <p>당신만을 위한 <strong>완전한 심층 분석 보고서 (PDF)</strong>를 이메일로 보내드립니다.</p>
                 <ul style="margin-top: 10px;">
                     <li>5차원 자존감 점수 상세 분석</li>
                     <li>당신의 숨겨진 강점 발견</li>
                     <li>개인 맞춤형 성장 제안</li>
+                    <li>4주 맞춤 성장 로드맵</li>
                     <li>PDF 보고서 첨부</li>
                 </ul>
             </div>
