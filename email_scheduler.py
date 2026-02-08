@@ -201,12 +201,12 @@ class EmailScheduler:
                 </p>
             </div>
             
-            <p>매주 월요일마다 그 주의 실천 가이드를 보내드립니다.</p>
+            <p>매주 그 주의 실천 가이드를 보내드립니다.</p>
             
             <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
                 <p style="margin: 0;"><strong>💚 응원 메시지</strong></p>
                 <p style="margin: 5px 0 0 0;">완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.<br/>
-                매주 월요일마다 실천 가이드를 보내드리며, 당신의 여정을 함께하겠습니다.</p>
+                매주 실천 가이드를 보내드리며, 당신의 여정을 함께하겠습니다.</p>
             </div>
             
             <p style="margin-top: 30px;">
