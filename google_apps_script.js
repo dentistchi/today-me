@@ -89,6 +89,36 @@ function doPost(e) {
       .after(24 * 60 * 60 * 1000) // 24시간 = 86400000 밀리초
       .create();
     
+    // Week 1 트리거 (시작일)
+    ScriptApp.newTrigger('sendWeek1Email')
+      .timeBased()
+      .after(1 * 60 * 1000) // 1분 후 (테스트용, 실제로는 즉시)
+      .create();
+    
+    // Week 2 트리거 (7일 후)
+    ScriptApp.newTrigger('sendWeek2Email')
+      .timeBased()
+      .after(7 * 24 * 60 * 60 * 1000) // 7일 후
+      .create();
+    
+    // Week 3 트리거 (14일 후)
+    ScriptApp.newTrigger('sendWeek3Email')
+      .timeBased()
+      .after(14 * 24 * 60 * 60 * 1000) // 14일 후
+      .create();
+    
+    // Week 4 트리거 (21일 후)
+    ScriptApp.newTrigger('sendWeek4Email')
+      .timeBased()
+      .after(21 * 24 * 60 * 60 * 1000) // 21일 후
+      .create();
+    
+    // 완료 이메일 트리거 (28일 후)
+    ScriptApp.newTrigger('sendCompletionEmail')
+      .timeBased()
+      .after(28 * 24 * 60 * 60 * 1000) // 28일 후
+      .create();
+    
     // 트리거 ID를 데이터와 함께 저장
     properties.setProperty(dataKey + "_trigger", "scheduled");
     
@@ -356,6 +386,224 @@ function createWelcomeEmail(userName) {
     </body>
     </html>
   `;
+}
+
+/**
+ * Week 1 이메일 생성
+ */
+function createWeekEmail(userName, weekNum) {
+  var weekThemes = {
+    1: '자기자비 기초 - 자기비판 알아차리기',
+    2: '완벽주의 내려놓기 - 80%의 용기',
+    3: '공통 인간성 인식 - 나만이 아니야',
+    4: '안정적 자기가치 - 존재 그 자체로'
+  };
+  
+  var weekMindsets = {
+    1: '"나는 나를 비판하는 목소리를 알아차릴 수 있다."',
+    2: '"80%로도 충분히 가치 있다."',
+    3: '"힘들어하는 건 나만이 아니다."',
+    4: '"나는 무언가를 성취해서가 아니라, 존재 그 자체로 가치 있다."'
+  };
+  
+  var theme = weekThemes[weekNum] || '';
+  var mindset = weekMindsets[weekNum] || '';
+  
+  return `
+    <html>
+    <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #2C3E50;">안녕하세요, ${userName}님! 🌟</h2>
+        
+        <p>Week ${weekNum}이 시작되었습니다. 지금까지 여정을 함께해주셔서 감사합니다.</p>
+        
+        <div style="background-color: #E8F8F5; padding: 20px; border-left: 4px solid #27AE60; margin: 20px 0; border-radius: 5px;">
+            <h3 style="color: #27AE60; margin-top: 0;">🌟 Week ${weekNum} 시작!</h3>
+            <p style="font-size: 15px; margin: 10px 0;"><strong>이번 주 테마:</strong> ${theme}</p>
+            <p style="font-size: 14px; font-style: italic; color: #555; margin: 10px 0;">
+                핵심 마인드셋: ${mindset}
+            </p>
+        </div>
+        
+        <h3 style="color: #3498DB;">💚 응원 메시지</h3>
+        <p>완벽하지 않아도 괜찮습니다. 중요한 것은 방향입니다.</p>
+        <p>하루에 단 <strong>5-10분</strong>만 투자하면 됩니다. 매일 작은 실천이 큰 변화를 만듭니다.</p>
+        <p><strong>저희가 함께합니다. 당신은 혼자가 아닙니다. 💚</strong></p>
+        
+        <h3 style="color: #3498DB;">🎯 이번 주 실천 내용</h3>
+        <div style="background-color: #E3F2FD; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p>이번 주에는 <strong>${theme}</strong>를 주제로 매일 작은 실천을 해보세요.</p>
+            <p>매일 5-10분만 투자하면 됩니다. 완벽하지 않아도 괜찮습니다.</p>
+        </div>
+        
+        <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+            <p style="margin: 0;"><strong>💡 중요한 팁</strong></p>
+            <p style="margin: 5px 0 0 0;">하루를 놓쳐도 괜찮습니다. 다시 시작하면 됩니다.<br/>
+            완벽하게 하려고 하지 마세요. 꾸준함이 완벽함을 이깁니다.</p>
+        </div>
+        
+        <p style="margin-top: 30px;">
+            당신을 응원합니다,<br/>
+            bty Training Team 💚
+        </p>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * 완료 이메일 생성
+ */
+function createCompletionEmail(userName) {
+  return `
+    <html>
+    <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+        <h1 style="color: #8E44AD; text-align: center;">🎊🎊🎊 28일 완주! 축하합니다! 🎊🎊🎊</h1>
+        
+        <h2 style="color: #2C3E50;">정말 대단합니다, ${userName}님!</h2>
+        
+        <p>28일 동안 매일 자기자비를 실천한 당신을 진심으로 축하합니다.</p>
+        
+        <div style="background-color: #E8F8F5; padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <h3 style="color: #27AE60; margin-top: 0;">✅ 당신이 이룬 것들</h3>
+            <ul>
+                <li>자기비판을 알아차렸습니다</li>
+                <li>완벽주의를 내려놓기 시작했습니다</li>
+                <li>혼자가 아님을 깨달았습니다</li>
+                <li>존재 자체로 가치 있음을 배웠습니다</li>
+                <li>나만의 자기자비 방법을 찾았습니다</li>
+            </ul>
+        </div>
+        
+        <h3 style="color: #3498DB;">🔄 다음 단계: 재검사</h3>
+        <p>28일 전과 비교하여 얼마나 성장했는지 확인해보세요!</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="https://dentistchi.github.io/today-me/" 
+               style="background-color: #667eea; color: white; padding: 15px 30px; 
+                      text-decoration: none; border-radius: 30px; font-weight: bold; 
+                      display: inline-block; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
+                재검사 시작하기
+            </a>
+        </div>
+        
+        <h3 style="color: #3498DB;">💡 다음 단계</h3>
+        <div style="background-color: #FEF5E7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>1단계:</strong> 재검사를 완료하여 변화를 확인하세요</p>
+            <p><strong>2단계:</strong> 28일 동안 만든 루틴을 계속 유지하세요</p>
+            <p><strong>3단계:</strong> 필요할 때마다 가이드를 다시 읽어보세요</p>
+        </div>
+        
+        <div style="background-color: #E8F8F5; padding: 15px; border-left: 4px solid #27AE60; margin: 20px 0;">
+            <p style="margin: 0;"><strong>💚 마지막 응원</strong></p>
+            <p style="margin: 5px 0 0 0;">완벽하지 않아도 괜찮습니다. 당신은 지금 이 순간에도 충분히 가치 있습니다.<br/>
+            앞으로도 자기자비의 여정을 계속 이어가시길 바랍니다.</p>
+        </div>
+        
+        <p style="margin-top: 30px;">
+            함께해주셔서 감사합니다,<br/>
+            bty Training Team 💚
+        </p>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Week 1 이메일 발송
+ */
+function sendWeek1Email() {
+  sendWeekEmailByNumber(1);
+}
+
+/**
+ * Week 2 이메일 발송
+ */
+function sendWeek2Email() {
+  sendWeekEmailByNumber(2);
+}
+
+/**
+ * Week 3 이메일 발송
+ */
+function sendWeek3Email() {
+  sendWeekEmailByNumber(3);
+}
+
+/**
+ * Week 4 이메일 발송
+ */
+function sendWeek4Email() {
+  sendWeekEmailByNumber(4);
+}
+
+/**
+ * 주차별 이메일 발송 공통 함수
+ */
+function sendWeekEmailByNumber(weekNum) {
+  var properties = PropertiesService.getScriptProperties();
+  var allProperties = properties.getProperties();
+  
+  // 가장 최근 등록된 사용자 찾기
+  for (var key in allProperties) {
+    if (key.startsWith("delayed_email_") && !key.endsWith("_trigger") && !key.endsWith("_sent") && !key.endsWith("_week" + weekNum)) {
+      try {
+        var triggerData = JSON.parse(allProperties[key]);
+        
+        // Week 이메일 생성
+        var emailBody = createWeekEmail(triggerData.userName, weekNum);
+        
+        // 이메일 발송
+        MailApp.sendEmail({
+          to: triggerData.email,
+          subject: "[Week " + weekNum + " 시작] " + triggerData.userName + "님, 함께 시작해요! 🌟",
+          htmlBody: emailBody,
+          name: "bty Training Team"
+        });
+        
+        // 발송 완료 표시
+        properties.setProperty(key + "_week" + weekNum, "sent");
+        
+        Logger.log("Week " + weekNum + " 이메일 발송 완료: " + triggerData.email);
+      } catch (error) {
+        Logger.log("Week " + weekNum + " 이메일 발송 중 오류: " + error);
+      }
+    }
+  }
+}
+
+/**
+ * 완료 이메일 발송
+ */
+function sendCompletionEmail() {
+  var properties = PropertiesService.getScriptProperties();
+  var allProperties = properties.getProperties();
+  
+  // 가장 최근 등록된 사용자 찾기
+  for (var key in allProperties) {
+    if (key.startsWith("delayed_email_") && !key.endsWith("_trigger") && !key.endsWith("_sent") && !key.endsWith("_completion")) {
+      try {
+        var triggerData = JSON.parse(allProperties[key]);
+        
+        // 완료 이메일 생성
+        var emailBody = createCompletionEmail(triggerData.userName);
+        
+        // 이메일 발송
+        MailApp.sendEmail({
+          to: triggerData.email,
+          subject: "[28일 완주!] " + triggerData.userName + "님, 축하합니다! 🎉🏆",
+          htmlBody: emailBody,
+          name: "bty Training Team"
+        });
+        
+        // 발송 완료 표시 및 정리
+        properties.setProperty(key + "_completion", "sent");
+        
+        Logger.log("완료 이메일 발송 완료: " + triggerData.email);
+      } catch (error) {
+        Logger.log("완료 이메일 발송 중 오류: " + error);
+      }
+    }
+  }
 }
 
 /**
