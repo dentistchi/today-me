@@ -280,7 +280,7 @@ class EmailTemplateGenerator:
 당신의 여정을 응원합니다.
 
 따뜻한 마음으로,
-자존감 연구팀 드림
+bty Training Team 드림
 
 P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
      우리는 당신의 이야기를 듣고 싶습니다.
@@ -358,7 +358,7 @@ P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
 내일 더 깊은 이야기로 찾아뵙겠습니다.
 
 따뜻한 마음으로,
-자존감 연구팀 드림
+bty Training Team 드림
 """
         return template
     
@@ -488,7 +488,7 @@ P.S. 궁금한 점이 있으시면 이 이메일에 답장해주세요.
 당신을 응원합니다.
 
 진심을 담아,
-자존감 연구팀
+bty Training Team
 
 P.S. 4주 후 당신의 변화 이야기를 듣고 싶습니다. 💚
 
@@ -506,7 +506,7 @@ P.S. 4주 후 당신의 변화 이야기를 듣고 싶습니다. 💚
 본 분석은 자기 이해를 돕기 위한 과학적 도구이며, 
 의료적 진단을 대체하지 않습니다.
 
-© 2026 자존감 연구팀. All rights reserved.
+© 2026 bty Training Team. All rights reserved.
 """
         return template
     

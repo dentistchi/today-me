@@ -34,7 +34,7 @@
    SMTP_USERNAME=your-email@gmail.com
    SMTP_PASSWORD=abcd efgh ijkl mnop  # 생성된 앱 비밀번호
    FROM_EMAIL=noreply@selfesteem.com
-   FROM_NAME=자존감 연구팀
+   FROM_NAME=bty Training Team
    
    # 개발자 이메일 (중요!)
    ADMIN_EMAIL=developer@example.com  # 알림을 받을 개발자 이메일

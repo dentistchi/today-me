@@ -510,4 +510,4 @@ sudo systemctl reload nginx
 
 MIT License
 
-Copyright (c) 2026 자존감 평가 시스템 개발팀
+Copyright (c) 2026 bty Training Team
